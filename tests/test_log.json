@@ -1,0 +1,17 @@
+[
+  {"time": 0.0, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 0.5, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 1.0, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 1.5, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 2.0, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": true, "text": "前方有行人。"},
+  {"time": 2.5, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 3.0, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 3.5, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": false},
+  {"time": 4.0, "objects": [{"class_zh": "行人", "direction": "前方", "distance": "较远"}], "spoke": true, "text": "前方有行人。"},
+  {"time": 4.5, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "较远"}], "spoke": false},
+  {"time": 5.0, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "较近"}], "spoke": false},
+  {"time": 5.5, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "很近"}], "spoke": false},
+  {"time": 6.0, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "较远"}], "spoke": false},
+  {"time": 6.5, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "很近"}], "spoke": false},
+  {"time": 7.0, "objects": [{"class_zh": "汽车", "direction": "右侧", "distance": "较远"}], "spoke": false}
+]
