@@ -69,6 +69,17 @@ def run_all_validations():
         vr.fail(f"exception: {e}")
         results.append(vr)
 
+    # 2c. PHASE_A_PATH_INTEGRITY — 控制类指令路径完整性
+    try:
+        from validation.phaseA_path_integrity import validate_path_integrity
+
+        vr = validate_path_integrity()
+        results.append(vr)
+    except Exception as e:
+        vr = ValidationResult("PHASE_A_PATH_INTEGRITY")
+        vr.fail(f"exception: {e}")
+        results.append(vr)
+
     # 3. 极端压测（复用 simulate_log + log_analyzer）
     try:
         import subprocess

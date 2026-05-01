@@ -112,6 +112,11 @@ class Controller:
 
     def handle_event(self, event: Dict[str, Any]):
         """统一事件入口，支持处理 ASR 直接生成的扁平事件。"""
+        # FPS 限频
+        fps = CONFIG.get("system.fps_limit", 10)
+        if fps > 0:
+            time.sleep(1.0 / fps)
+
         self._poll_vlm_results()
         self._update_user_focus()
 
@@ -289,7 +294,11 @@ class Controller:
         if route == "VLM":
             intent_result.intent = "general_qa"
         elif route == "FALLBACK":
-            intent_result.intent = "general_qa"
+            if intent_result.intent not in (
+                IntentType.MUTE_NAVIGATION,
+                IntentType.RESUME_NAVIGATION,
+            ):
+                intent_result.intent = "general_qa"
 
         self.last_user_input_time = timestamp
         self.user_query_active_until = timestamp + 3.0

@@ -40,7 +40,7 @@ class IntentResult:
 _RULE_TABLE: list[tuple[str, tuple[str, ...], tuple[str, ...]]] = [
     (
         IntentType.MUTE_NAVIGATION,
-        ("安静", "静音", "别播报", "不要说话"),
+        ("安静", "静音", "别播报", "不要说话", "停止播报", "暂停播报"),
         (),
     ),
     (
