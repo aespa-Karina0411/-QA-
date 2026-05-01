@@ -128,6 +128,7 @@ class SpeechManager:
 
         if not self.speech_lock["can_interrupt"]:
             print("[LOCK BLOCK]", src)
+            print("[TRACE] VLM_BLOCKED: reason=lock_active src=", src)
             return False
 
         return True

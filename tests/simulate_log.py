@@ -80,6 +80,15 @@ def simulate_arbitration(entries):
 
     def _pick_next(t_now):
         nonlocal cycle_idx, last_vlm_play_time, consecutive_warnings
+        # Phase D: VLM Aging Boost
+        for qitem in list(vlm_q):
+            wait = t_now - qitem.get("enqueue_ts", t_now)
+            print(f"[DEBUG][SIM_VLM_WAIT] t={t_now:.1f} wait={wait:.1f}s qlen={len(vlm_q)}")
+            if wait > 1.0:
+                vlm_q.remove(qitem)
+                qitem["aging_boost"] = True
+                qitem["force_play"] = True
+                return qitem
         # 1. VLM 保活（最优先非 WARNING 路径）
         if t_now - last_vlm_play_time > 4.0 and vlm_q:
             consecutive_warnings = 0
@@ -153,6 +162,7 @@ def simulate_arbitration(entries):
 
         if t < playing_until:
             # 正在播放中 → 入队
+            e["enqueue_ts"] = t
             if prio == 1:
                 if len(warn_q) >= 3:
                     warn_q.pop(0)  # 替换最旧

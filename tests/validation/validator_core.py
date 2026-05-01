@@ -106,6 +106,13 @@ def run_all_validations():
         vr.add_metric("system_state", analyzer.system_state)
         vr.add_metric("avg_interval", round(analyzer.avg_interval, 1) if analyzer.avg_interval else 0)
 
+        # Phase D: USER_FOCUS 指标
+        vr.add_metric("uf_submits", getattr(analyzer, 'user_focus_submits', 0))
+        vr.add_metric("uf_played", getattr(analyzer, 'user_focus_played', 0))
+        vr.add_metric("uf_overwrites", getattr(analyzer, 'user_focus_overwrites', 0))
+        vr.add_metric("aging_boost", getattr(analyzer, 'aging_boost_count', 0))
+        vr.add_metric("force_play", getattr(analyzer, 'force_play_count', 0))
+
         if analyzer.drop_by_priority.get("warning", 99) > 0:
             vr.fail(f"WARNING dropped: {analyzer.drop_by_priority['warning']}")
         if len(analyzer.order_violations) > 0:

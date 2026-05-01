@@ -1,4 +1,0 @@
-[SIMULATE] 304 entries (spike=142), decision=230, vlm=74, played=59
-  dropped=245, max_queue=11
-    expired: 4
-    rejected_backpressure: 176

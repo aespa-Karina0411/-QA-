@@ -40,11 +40,16 @@ class VLMManager:
         version: int = 0,
     ) -> None:
         """入队 VLM 请求（非阻塞）"""
+        print("[TRACE] VLM_REQUEST_RECEIVED")
         with self.lock:
             if self._max_queue == 1:
                 self.queue.clear()
             elif len(self.queue) >= self._max_queue:
-                self.queue.popleft()
+                if CONFIG.get("vlm.drop_when_full", True):
+                    print("[TRACE] VLM_DROP: queue_full")
+                    return
+                else:
+                    self.queue.popleft()
 
             self.queue.append({
                 "image": image,
@@ -72,6 +77,7 @@ class VLMManager:
                 time.sleep(0.1)
                 continue
 
+            print("[TRACE] VLM_START_PROCESS")
             self._run_task(task)
 
     def _run_task(self, task):
@@ -132,6 +138,7 @@ class VLMManager:
             result = "我暂时无法判断，可以换个角度再试一下"
             is_fallback = True
 
+        print("[TRACE] VLM_RESULT_READY")
         with self.lock:
             self.result_queue.append({
                 "text": result,

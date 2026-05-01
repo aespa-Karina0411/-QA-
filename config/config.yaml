@@ -24,6 +24,7 @@ arbitrator:
   vlm_survival_force: 5.0    # can_play_vlm survival 间隔 (s)
   env_rate_limit: 1.5        # ENV 入队速率限制 (s)
   env_blocked_threshold: 3   # ENV 降级阈值 (vlm 积压数)
+  vlm_starvation_threshold: 4.0  # VLM 老化提升阈值 (s)
   cycle: ["VLM", "ENV", "ENV"]  # 加权轮询顺序
 
 decision:
@@ -53,6 +54,7 @@ camera:
 vlm:
   scheduler_interval: 3.0    # VLM 调度间隔 (s)
   max_queue: 1               # VLM 请求队列容量 (1=只保留最新)
+  drop_when_full: true       # 队列满时丢弃新请求
   simulate_delay: 0.0        # 模拟延迟 (s), 0=禁用
   model: qwen3.5-flash
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1

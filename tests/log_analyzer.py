@@ -398,8 +398,25 @@ class LogAnalyzer:
         self.compute_worst_window()
         self.classify_system_state()
         self.compute_success_rate()
+        self.compute_user_focus_metrics()
 
         self.print_report()
+
+    def compute_user_focus_metrics(self):
+        self.user_focus_submits = 0
+        self.user_focus_played = 0
+        self.user_focus_overwrites = 0
+        self.aging_boost_count = 0
+        self.force_play_count = 0
+        for entry in self.logs:
+            if entry.get("source") == "vlm" and entry.get("user_focus"):
+                self.user_focus_submits += 1
+                if entry.get("played"):
+                    self.user_focus_played += 1
+            if entry.get("aging_boost"):
+                self.aging_boost_count += 1
+            if entry.get("force_play"):
+                self.force_play_count += 1
 
     def compute_success_rate(self):
         total = len(self.logs)
@@ -447,6 +464,14 @@ class LogAnalyzer:
         state = {"GREEN":"GREEN","YELLOW":"YELLOW","RED":"RED"}.get(self.system_state, "?")
         print(f"  system_state:       {state}")
         print()
+
+        if hasattr(self, 'user_focus_submits'):
+            print(f"  [USER_FOCUS] submits:  {self.user_focus_submits}")
+            print(f"  [USER_FOCUS] played:   {self.user_focus_played}")
+            print(f"  [USER_FOCUS] overwrite:{self.user_focus_overwrites}")
+            print(f"  [AGING_BOOST] count:   {getattr(self, 'aging_boost_count', 0)}")
+            print(f"  [FORCE_PLAY] count:    {getattr(self, 'force_play_count', 0)}")
+            print()
 
         passed = self.drop_by_priority['warning'] == 0 and ov == 0 and sr <= 50.0
         print(f"  FINAL:              {'PASS' if passed else 'FAIL'}")

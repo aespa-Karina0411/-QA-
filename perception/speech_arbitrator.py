@@ -18,6 +18,11 @@ class SpeechArbitrator:
         self._vlm_force_interval = CONFIG.get("arbitrator.vlm_force_interval", 4.0)
         self._vlm_survival_force = CONFIG.get("arbitrator.vlm_survival_force", 5.0)
         self._env_blocked_threshold = CONFIG.get("arbitrator.env_blocked_threshold", 3)
+        self._vlm_starvation_threshold = CONFIG.get("arbitrator.vlm_starvation_threshold", 4.0)
+
+        # Phase D: USER_FOCUS 强保障保留槽
+        self.vlm_reserved_slot = None
+        self.vlm_reserved_pending = False
 
         # --- 三队列独立管理 ---
         self.warning_queue = []
@@ -42,8 +47,18 @@ class SpeechArbitrator:
     # ==================================================================
     def submit(self, item, context=None):
         now = time.time()
+        item["enqueue_ts"] = now
         priority = item.get("priority", 3)
         src = item.get("source", "vlm")
+
+        # Phase D: USER_FOCUS 强保障 — VLM 不进入队列竞争，直接保留槽
+        if src == "vlm" and item.get("user_focus", False):
+            trace_id = item.get("trace_id", "?")
+            print(f"[TRACE][RESERVED_SET] id={trace_id}")
+            if self.vlm_reserved_slot is not None:
+                self.vlm_reserved_pending = True
+            self.vlm_reserved_slot = item
+            return
         tid = item.get("trace_id", "?")
 
         # ---- USER_FOCUS 拦截：非 VLM/user_direct/WARNING 全部禁止 ----
@@ -54,6 +69,7 @@ class SpeechArbitrator:
             is_warning = priority <= 1
             if not (is_vlm or is_user_direct or is_forced or is_warning):
                 print("[USER_FOCUS_BLOCK]", f"id={tid} source={src}")
+                print("[TRACE] VLM_BLOCKED: reason=USER_FOCUS id=", tid)
                 return
 
         item["source_queue"] = {0: "STARTUP", 1: "WARNING", 2: "VLM", 3: "ENV"}.get(priority, "ENV")
@@ -65,6 +81,7 @@ class SpeechArbitrator:
         if src == "vlm":
             if now - item["time"] > self._vlm_timeout:
                 print("[TRACE][DROP]", f"id={tid} reason=expired")
+                print("[TRACE] VLM_DROP: expired id=", tid)
                 return
 
         # ---- ENV 速率限制 ----
@@ -78,6 +95,8 @@ class SpeechArbitrator:
         if priority <= 1:
             self._push_warning(item)
         elif priority == 2:
+            if src == "vlm":
+                print("[TRACE] VLM_ENQUEUE id=", tid)
             self._push_vlm(item)
         elif priority == 3:
             if len(self.env_queue) >= self._env_max:
@@ -108,6 +127,31 @@ class SpeechArbitrator:
     # ==================================================================
     def select_next(self):
         now = time.time()
+
+        # Phase D: USER_FOCUS 强保障 — 保留槽最高优先级
+        if self.vlm_reserved_slot is not None:
+            item = self.vlm_reserved_slot
+            self.vlm_reserved_slot = None
+            if self.vlm_reserved_pending:
+                tid = item.get("trace_id", "?")
+                print(f"[TRACE][USER_FOCUS_OVERWRITE] id={tid}")
+            self.vlm_reserved_pending = False
+            print("[TRACE][SELECT]", f"id={item.get('trace_id','?')} source={item.get('source','?')} (reserved)")
+            return item
+
+        # Phase D Step 2: VLM 老化提升 — 超时 VLM 强制提升优先级
+        for qitem in list(self.vlm_queue):
+            wait_time = now - qitem.get("enqueue_ts", now)
+            print(f"[DEBUG][VLM_WAIT] id={qitem.get('trace_id','?')} wait={wait_time:.1f}s threshold={self._vlm_starvation_threshold}s")
+            if wait_time > self._vlm_starvation_threshold:
+                self.vlm_queue.remove(qitem)
+                tid = qitem.get("trace_id", "?")
+                print(f"[TRACE][VLM_AGING_BOOST] id={tid} wait={wait_time:.1f}s")
+                print("[TRACE][SELECT]", f"id={tid} source={qitem.get('source','?')} (aging)")
+                qitem["aging_boost"] = True
+                qitem["force_play"] = True
+                return qitem
+
         item = None
         bypass_throttle = False
 
@@ -165,8 +209,8 @@ class SpeechArbitrator:
         return item
 
     def _apply_throttle(self, item, bypass=False):
-        """播放节流：WARNING 始终放行；bypass True 绕过；item.bypass_throttle 绕过。"""
-        if bypass or item.get("bypass_throttle"):
+        """播放节流：WARNING/force_play/bypass 始终放行。"""
+        if bypass or item.get("bypass_throttle") or item.get("force_play"):
             return item
         now = time.time()
         if now - self.last_play_time >= self._throttle_window:
@@ -179,12 +223,13 @@ class SpeechArbitrator:
         if prio == 2:
             if not item.get("_throttled_once"):
                 item["_throttled_once"] = True
-                self.vlm_queue.insert(0, item)  # requeue at front
+                self.vlm_queue.insert(0, item)
                 tid = item.get("trace_id", "?")
                 print("[TRACE][DROP]", f"id={tid} reason=throttled_requeue")
             else:
                 tid = item.get("trace_id", "?")
                 print("[TRACE][DROP]", f"id={tid} reason=throttled_drop")
+                print("[TRACE] VLM_BLOCKED: reason=throttled id=", tid)
             return None                     # VLM delayed
 
         # prio == 3
@@ -199,11 +244,43 @@ class SpeechArbitrator:
         return item
 
     def _pop_vlm(self):
-        # LIFO：取最新入队的 VLM（最有可能在 5s 窗口内）
-        item = self.vlm_queue.pop()
-        self.last_vlm_play_time = time.time()
-        self.last_play_time = time.time()
-        return item
+        """Phase D Step 3: VLM Strategy Layer — wait_time 主导评分"""
+        now = time.time()
+
+        # force_play 优先脱离评分竞争
+        for i, item in enumerate(self.vlm_queue):
+            if item.get("force_play"):
+                self.vlm_queue.pop(i)
+                tid = item.get("trace_id", "?")
+                print(f"[TRACE][VLM_FORCE_SELECT] id={tid}")
+                self.last_vlm_play_time = now
+                self.last_play_time = now
+                return item
+
+        best = None
+        best_score = -1
+        best_idx = -1
+        for i, item in enumerate(self.vlm_queue):
+            wait_time = now - item.get("enqueue_ts", now)
+            score = 0
+            if item.get("aging_boost"):
+                score += 30
+            else:
+                score += 10
+            score += wait_time * 10
+            if score > best_score:
+                best_score = score
+                best = item
+                best_idx = i
+
+        if best_idx >= 0:
+            self.vlm_queue.pop(best_idx)
+            tid = best.get("trace_id", "?")
+            wait = now - best.get("enqueue_ts", now)
+            print(f"[TRACE][VLM_SCORE_SELECT] id={tid} score={best_score:.0f} wait={wait:.1f}s")
+        self.last_vlm_play_time = now
+        self.last_play_time = now
+        return best
 
     def _pop_env(self):
         item = self.env_queue.pop(0)

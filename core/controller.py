@@ -112,11 +112,6 @@ class Controller:
 
     def handle_event(self, event: Dict[str, Any]):
         """统一事件入口，支持处理 ASR 直接生成的扁平事件。"""
-        # FPS 限频
-        fps = CONFIG.get("system.fps_limit", 10)
-        if fps > 0:
-            time.sleep(1.0 / fps)
-
         self._poll_vlm_results()
         self._update_user_focus()
 
@@ -138,6 +133,10 @@ class Controller:
         """处理来自感知层的导航更新事件。"""
         if self.is_startup_phase:
             return {"mode": self.mode, "speech": {"spoken": False, "reason": "startup_phase"}}
+
+        # USER_FOCUS 期间冻结 scene 更新，防止 version 漂移导致 VLM 结果被丢弃
+        if self.context["system"]["user_focus"]["active"]:
+            return {"mode": self.mode, "speech": {"spoken": False, "reason": "user_focus_frozen"}}
 
         # 配置限频
         if timestamp - self._last_decision_time < self._decision_interval:
@@ -182,9 +181,12 @@ class Controller:
 
     def _on_vlm_result(self, answer: str, version: int = 0, is_fallback: bool = False):
         """统一接收 VLM 输出结果（唯一语音出口）。VLM 失败不回退到 Decision。"""
+        print("[TRACE] VLM_RESULT_CALLBACK")
         if not answer:
+            print("[TRACE] VLM_DROP: empty_answer")
             return
         if version != self.context["scene"].get("version"):
+            print("[TRACE] VLM_DROP: version_mismatch got=", version, "current=", self.context["scene"].get("version"))
             return
 
         if is_fallback:
@@ -193,6 +195,7 @@ class Controller:
         trace_id = uuid.uuid4().hex[:6]
         print("[TRACE][VLM_READY]", trace_id)
         print("[TRACE][SUBMIT]", f"id={trace_id} source=vlm priority=2 text={answer[:30]}")
+        print("[TRACE] VLM_SUBMIT_TO_ARBITRATOR id=", trace_id)
 
         self.arbitrator.submit({
             "text": answer,
@@ -201,6 +204,7 @@ class Controller:
             "time": time.time(),
             "trace_id": trace_id,
             "force_play": True,
+            "user_focus": self.context["system"]["user_focus"]["active"],
         }, context=self.context)
 
     def _poll_vlm_results(self):
@@ -217,10 +221,17 @@ class Controller:
         if item is None:
             return
 
+        if item.get("force_play"):
+            print(f"[TRACE][FORCE_PLAY_EXECUTED] id={item.get('trace_id','?')}")
+
+        if item.get("source") == "vlm":
+            print("[TRACE] VLM_SELECTED_FOR_PLAY id=", item.get("trace_id", "?"))
+
         if not self.speech.try_play(item):
             return
 
         if item.get("source") == "vlm":
+            print("[TRACE] VLM_PLAY id=", item.get("trace_id", "?"))
             self.arbitrator.mark_vlm_played()
 
     def _play_startup_message(self):
@@ -249,6 +260,7 @@ class Controller:
         """处理来自语音识别（ASR）的用户意图事件。"""
         text = data.get("text", "")
         print("[USER_INPUT]", text)
+        print("[TRACE] USER_QUERY received:", text)
 
         self._enter_user_focus()
 
@@ -334,6 +346,7 @@ class Controller:
                     prompt = f"当前环境中有：{objects_desc}\n用户问题：{text}"
                 current_version = self.context["scene"]["version"]
                 print("[VLM_REQUEST]")
+                print("[TRACE] VLM_TRIGGER")
                 self.vlm_manager.ask_async(image, prompt, vlm_context, version=current_version)
                 self.arbitrator.last_user_query_time = time.time()
                 response = "正在查看，请稍等"
