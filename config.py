@@ -21,4 +21,10 @@ VLM_BASE_URL = CONFIG.get("vlm.base_url", "https://dashscope.aliyuncs.com/compat
 TTS_MODEL = CONFIG.get("tts.model", "cosyvoice-v1")
 TTS_VOICE = CONFIG.get("tts.voice", "longshuo")
 
+# === Pi Simulation Config (Stage 1 ONLY) ===
+SIMULATE_PI = CONFIG.get("pi_sim.enabled", False)
+SIMULATED_VLM_DELAY = CONFIG.get("pi_sim.vlm_delay", 0.3)
+SIMULATED_MAX_VLM_QUEUE_SIZE = CONFIG.get("pi_sim.max_vlm_queue", 3)
+SIMULATION_MODE = CONFIG.get("pi_sim.mode", "normal")   # "normal" | "stress"
+
 print("config loaded (compat mode)")

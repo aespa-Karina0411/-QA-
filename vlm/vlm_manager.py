@@ -82,6 +82,11 @@ class VLMManager:
 
     def _run_task(self, task):
         try:
+            # Pi Simulation: 注入延迟模拟慢 CPU
+            import config
+            if config.SIMULATE_PI:
+                time.sleep(config.SIMULATED_VLM_DELAY)
+
             image = task["image"]
             text = task["text"]
             context = task["context"]

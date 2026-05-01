@@ -230,6 +230,11 @@ class Controller:
         if not self.speech.try_play(item):
             return
 
+        self.arbitrator.trace.log("PLAY",
+            id=item.get("trace_id"),
+            source=item.get("source"),
+            priority=item.get("priority", 3))
+
         if item.get("source") == "vlm":
             print("[TRACE] VLM_PLAY id=", item.get("trace_id", "?"))
             self.arbitrator.mark_vlm_played()

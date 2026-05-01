@@ -3,13 +3,24 @@
 
 import time
 from core.global_config import CONFIG
+from utils.trace_logger import TraceLogger
+
+_trace_logger = None
 
 
 class SpeechArbitrator:
 
     def __init__(self):
+        global _trace_logger
+        if _trace_logger is None:
+            _trace_logger = TraceLogger()
+        self.trace = _trace_logger
         self._warn_max = CONFIG.get("arbitrator.warning_queue_max", 3)
         self._vlm_max = CONFIG.get("arbitrator.vlm_queue_max", 5)
+        # Pi Simulation: 队列压缩
+        import config as _cfg
+        if _cfg.SIMULATE_PI:
+            self._vlm_max = _cfg.SIMULATED_MAX_VLM_QUEUE_SIZE
         self._env_max = CONFIG.get("arbitrator.env_queue_max", 3)
         self._vlm_timeout = CONFIG.get("arbitrator.vlm_timeout", 8.0)
         self._vlm_survival = CONFIG.get("arbitrator.vlm_survival_interval", 4.0)
@@ -50,16 +61,26 @@ class SpeechArbitrator:
         item["enqueue_ts"] = now
         priority = item.get("priority", 3)
         src = item.get("source", "vlm")
-
-        # Phase D: USER_FOCUS 强保障 — VLM 不进入队列竞争，直接保留槽
-        if src == "vlm" and item.get("user_focus", False):
-            trace_id = item.get("trace_id", "?")
-            print(f"[TRACE][RESERVED_SET] id={trace_id}")
-            if self.vlm_reserved_slot is not None:
-                self.vlm_reserved_pending = True
-            self.vlm_reserved_slot = item
-            return
         tid = item.get("trace_id", "?")
+
+        # Phase E0: Observation Only — 标记潜在丢弃对象，不执行丢弃
+        drop_candidate = False
+        drop_reason = None
+        if src == "vlm":
+            is_low = not (item.get("aging_boost") or item.get("force_play"))
+            near_full = len(self.vlm_queue) >= self._vlm_max - 1
+            if is_low and near_full:
+                drop_candidate = True
+                drop_reason = "low_semantic_under_pressure"
+                semantic_label = "LOW" if is_low else "NORMAL"
+                print(f"[TRACE][DROP_CANDIDATE] id={tid} semantic={semantic_label} queue_size={len(self.vlm_queue)} reason={drop_reason}")
+                self.trace.log("DROP_CANDIDATE",
+                    id=tid,
+                    semantic=semantic_label,
+                    queue_size=len(self.vlm_queue),
+                    reason=drop_reason)
+        item["drop_candidate"] = drop_candidate
+        item["drop_reason"] = drop_reason
 
         # ---- USER_FOCUS 拦截：非 VLM/user_direct/WARNING 全部禁止 ----
         if context and context.get("system", {}).get("user_focus", {}).get("active"):
@@ -278,6 +299,11 @@ class SpeechArbitrator:
             tid = best.get("trace_id", "?")
             wait = now - best.get("enqueue_ts", now)
             print(f"[TRACE][VLM_SCORE_SELECT] id={tid} score={best_score:.0f} wait={wait:.1f}s")
+            self.trace.log("VLM_SCORE_SELECT",
+                id=tid,
+                wait=round(wait, 2),
+                score=round(best_score, 0),
+                aging=bool(best.get("aging_boost")))
         self.last_vlm_play_time = now
         self.last_play_time = now
         return best

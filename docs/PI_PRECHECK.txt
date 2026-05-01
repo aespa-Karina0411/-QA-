@@ -1,0 +1,100 @@
+树莓派运行前检查清单（必须全部通过）
+============================================
+
+一、基础环境检查
+------------------
+
+[ ] 进入项目目录成功
+    检查方法：执行 cd ~/edge-visionQA 后无报错
+    失败处理：确认项目是否已复制到该路径
+
+[ ] Python 可用
+    检查方法：python --version 能看到 3.10 或更高
+    失败处理：安装 Python 3.10+
+
+[ ] requirements 安装成功
+    检查方法：pip install -r requirements.txt 无报错
+    失败处理：重新执行安装命令
+
+
+二、配置检查
+------------------
+
+[ ] 当前配置为 Pi 模式
+    检查方法：cat config/config.yaml | grep "profile:"  应输出 profile: pi
+    失败处理：编辑文件，将 profile 改为 pi
+
+[ ] 已关闭模拟模式
+    检查方法：cat config/config_pi.yaml | grep "pi_sim"
+             如果没有这行，或者显示 enabled: false → 通过
+    失败处理：如果显示 enabled: true，改为 false 或删除 pi_sim 段
+
+[ ] API 密钥已设置
+    检查方法：echo $DASHSCOPE_API_KEY  应有输出且不为空
+    失败处理：执行 export DASHSCOPE_API_KEY="你的密钥"
+
+
+三、硬件检查
+------------------
+
+[ ] 摄像头可用
+    检查方法：python -c "import cv2; c=cv2.VideoCapture(0); print(c.read()[0])"
+             应输出 True
+    失败处理：检查摄像头连接，或改 VideoCapture(0) 的编号为 1
+
+[ ] 麦克风可用
+    检查方法：arecord -d 1 test.wav 无报错
+    失败处理：检查麦克风连接和 ALSA 配置
+
+[ ] 音频输出可用
+    检查方法：aplay test.wav 无报错
+    失败处理：检查音频输出设备（HDMI/3.5mm/I2S）
+
+
+四、音频依赖检查（Pi 上容易翻车）
+------------------
+
+[ ] pyaudio 可用
+    检查方法：python -c "import pyaudio" 无报错
+    失败处理：sudo apt install portaudio19-dev && pip install pyaudio
+
+[ ] pygame mixer 可用
+    检查方法：python -c "import pygame; pygame.mixer.init()" 无报错
+    失败处理：sudo apt install libsdl2-mixer-2.0-0
+
+
+五、启动前确认
+------------------
+
+[ ] logs 目录存在
+    检查方法：ls logs/ 无报错
+    失败处理：mkdir logs
+
+[ ] 没有旧日志干扰
+    检查方法：ls logs/trace.jsonl  应显示文件不存在
+    失败处理：rm logs/trace.jsonl
+
+
+六、启动后 10 秒内检查（必须做）
+------------------
+
+[ ] 显示运行模式信息
+    检查方法：终端出现 [MODE] Headless (Pi / no display)
+    失败处理：停止程序，检查 config/profile 配置
+
+[ ] 有 TRACE 输出
+    检查方法：终端持续出现 [TRACE] 开头的行
+    失败处理：若无输出，按 Ctrl+C 重启
+
+[ ] 日志文件在增长
+    检查方法：另一终端执行 wc -l logs/trace.jsonl，10 秒后再执行一次，数字变大
+    失败处理：停止测试，联系负责人
+
+
+七、禁止事项
+------------------
+
+不要修改任何代码或配置文件
+不要同时运行其他程序
+不要跳过任何检查步骤
+测试前必须确认本清单全部通过

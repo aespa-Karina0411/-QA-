@@ -1,9 +1,35 @@
 """Extreme Break-the-System Stress Test — 120s / 200+ entries"""
 
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import json
 import random
+from collections import Counter
+
+from config import SIMULATION_MODE
 
 random.seed(42)
+
+# --- Mode-dependent parameters ---
+if SIMULATION_MODE == "stress":
+    DECISION_MIN = 0.5
+    DECISION_MAX = 0.8
+    VLM_INTERVAL = 2.0
+    SPIKE_INTERVAL = 15.0
+    SPIKE_COUNT_MIN = 20
+    SPIKE_COUNT_MAX = 30
+    BURST_PROB = 0.2
+    BURST_SIZE = 5
+else:
+    DECISION_MIN = 0.8
+    DECISION_MAX = 1.2
+    VLM_INTERVAL = 3.5
+    SPIKE_INTERVAL = 20.0
+    SPIKE_COUNT_MIN = 10
+    SPIKE_COUNT_MAX = 20
+    BURST_PROB = 0.05
+    BURST_SIZE = 2
 
 OBJECTS_POOL = ["行人", "汽车", "自行车", "公交车", "摩托车"]
 DIRECTIONS = ["左侧", "前方", "右侧"]
@@ -173,6 +199,11 @@ def simulate_arbitration(entries):
             elif prio == 2:
                 if len(vlm_q) >= 5:
                     vlm_q.pop(0)  # FIFO丢最旧
+                # E0: mark drop_candidate for LOW VLM near full
+                is_low = not e.get("aging_boost") and not e.get("force_play")
+                near_full = len(vlm_q) >= 4
+                if is_low and near_full:
+                    print(f"[TRACE][DROP_CANDIDATE] id={uid()} semantic=LOW queue_size={len(vlm_q)} reason=low_semantic_under_pressure")
                 vlm_q.append(e)
                 e["queued"] = True
                 e["played"] = False
@@ -242,12 +273,12 @@ def generate():
         e = make_entry(t, "decision", txt, False, False,
                        priority=prio, spoke=is_warning)
         entries.append(e)
-        t += 0.8 + random.random() * 0.4
+        t += DECISION_MIN + random.random() * (DECISION_MAX - DECISION_MIN)
 
     # ==================================================================
     # VLM 高频请求：每 3s 一次（全程）
     # ==================================================================
-    for vt in [i * 3.0 for i in range(41)]:
+    for vt in [i * VLM_INTERVAL for i in range(int(120 / VLM_INTERVAL) + 1)]:
         if vt > 120:
             break
         cat = random.choices([0, 1, 2, 3], weights=[35, 30, 20, 15])[0]
@@ -268,12 +299,12 @@ def generate():
         entries.append(e)
 
     # ==================================================================
-    # 突发冲击 Spike：每 20s 一次（0,20,40,60,80,100,115）
-    # 在 2s 内生成 15~25 条混合事件
-    # ==================================================================
-    for spike_start in [0.0, 20.0, 40.0, 60.0, 80.0, 100.0, 115.0]:
-        spike_end = spike_start + 2.0
-        count = random.randint(15, 25)
+    # 突发冲击 Spike：间隔和数量由模式决定
+    spike_starts = [i * SPIKE_INTERVAL for i in range(int(120 / SPIKE_INTERVAL) + 1)]
+    for spike_start in spike_starts:
+        if spike_start > 120:
+            break
+        count = random.randint(SPIKE_COUNT_MIN, SPIKE_COUNT_MAX)
         spike_t = spike_start
         for si in range(count):
             spike_t = spike_start + (si / count) * 2.0

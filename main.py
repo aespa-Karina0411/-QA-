@@ -1,5 +1,8 @@
 import base64
+import os
 import queue
+import select
+import sys
 import threading
 import time
 
@@ -86,6 +89,12 @@ def main():
     )
 
     print("系统已启动。按 'a' 开始语音输入，按 'q' 退出。")
+    if os.name == "nt":
+        print("[MODE] Windows (GUI enabled)")
+    elif os.environ.get("DISPLAY"):
+        print("[MODE] Linux GUI mode")
+    else:
+        print("[MODE] Headless (Pi / no display)")
     controller._play_startup_message()
     frame_count = 0
     detect_interval = CONFIG.get("yolo.detect_interval", 2)
@@ -122,9 +131,14 @@ def main():
                 res = controller.handle_event(user_event)
                 print(f"[System] 模式: {res['mode']}, 回复: {res.get('response')}")
 
-            cv2.imshow("Edge Vision", frame)
-            wait_ms = max(1, int(1000.0 / fps_limit))
-            key = cv2.waitKey(wait_ms) & 0xFF
+            # Headless Pi 兼容：无 DISPLAY 时跳过 GUI
+            if os.environ.get("DISPLAY") or os.name == "nt":
+                cv2.imshow("Edge Vision", frame)
+                wait_ms = max(1, int(1000.0 / fps_limit))
+                key = cv2.waitKey(wait_ms) & 0xFF
+            else:
+                key = -1
+                time.sleep(max(1.0 / fps_limit, 0.01))
 
             controller._poll_vlm_results()
             controller._drain_arbitrator()
@@ -137,6 +151,15 @@ def main():
                     print("\n[ASR] 语音采集中，请等待当前识别完成...")
             elif key == ord("q"):
                 break
+
+            # Headless Pi: stdin 'q' + Enter 退出（Windows 不启用 select）
+            if os.name != "nt":
+                dr, _, _ = select.select([sys.stdin], [], [], 0)
+                if dr:
+                    line = sys.stdin.readline().strip()
+                    if line.lower() == 'q':
+                        print("[INFO] Quit signal received")
+                        break
 
     finally:
         controller.speech.stop()

@@ -78,3 +78,9 @@ system:
   decision_interval: 0.5
   enable_env: true
   enable_vlm: true
+
+pi_sim:
+  enabled: false               # Pi 模拟开关
+  vlm_delay: 0.3               # 模拟 VLM 推理延迟 (s)
+  max_vlm_queue: 3             # 模拟队列压缩
+  mode: normal                 # normal | stress

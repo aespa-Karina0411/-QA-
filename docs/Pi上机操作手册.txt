@@ -1,0 +1,70 @@
+Pi 上机操作手册
+================
+
+1. 环境准备
+--------------
+cd ~/edge-visionQA
+pip install -r requirements.txt
+
+下载 yolov8n.pt 模型文件，放到项目根目录。
+
+设置 API 密钥（仅首次）：
+  export DASHSCOPE_API_KEY="你的阿里云API密钥"
+  ⚠️ 每次新开终端都需要重新设置该环境变量
+
+
+2. 选择 Pi 配置
+--------------
+打开 config/config.yaml，确认第 3 行是：
+  profile: pi
+
+（如果不是 pi，改为 pi）
+
+确认 config/config_pi.yaml 中没有以下内容：
+  pi_sim:
+    enabled: true
+（如果有，删除这两行）
+
+
+3. 启动系统
+--------------
+cd ~/edge-visionQA
+python main.py
+
+
+4. 正常运行表现
+--------------
+启动后终端会显示：
+  config loaded (compat mode)
+  系统已启动。按 'a' 开始语音输入，按 'q' 退出。
+  系统已启动。按 A 开始语音输入，按 Q 退出。（语音播报）
+
+之后终端持续滚动 trace 日志，例如：
+  [TRACE][SUBMIT] id=xxx source=decision priority=3 ...
+  [TRACE][SELECT] id=xxx ...
+  [TRACE][SPEAK_START] ...
+  [TRACE][SPEAK_END] ...
+
+正常：每秒有 1~5 条输出，无长时间停顿。
+摄像头窗口会弹出，显示实时画面。
+
+
+5. 如何操作
+--------------
+按 'a' 键 → 开始录音，松开后自动识别并回答。
+按 'q' 键 → 退出系统。
+系统会自动播报环境中的物体（行人、车辆等）。
+
+
+6. 停止方式
+--------------
+按 'q' 键，或 Ctrl+C。
+
+
+7. 异常判断
+--------------
+正常：终端持续输出，摄像头窗口有画面，语音有播报。
+异常1：报错 "请设置环境变量 DASHSCOPE_API_KEY" → 未设置 API 密钥，参考第 1 步。
+异常2：超过 10 秒终端无任何输出 → 可能卡死，按 Ctrl+C 重试。
+异常3：摄像头窗口全黑 → 检查摄像头连接，或调整摄像头 ID（main.py 中 cv2.VideoCapture(0) 改成 1）。
+异常4：语音输入无响应 → 确认麦克风已连接且权限已授权。
