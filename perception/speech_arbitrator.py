@@ -2,15 +2,27 @@
    WARNING_QUEUE | VLM_QUEUE | ENV_QUEUE + 加权轮询调度器"""
 
 import time
+from core.global_config import CONFIG
 
 
 class SpeechArbitrator:
 
     def __init__(self):
+        self._warn_max = CONFIG.get("arbitrator.warning_queue_max", 3)
+        self._vlm_max = CONFIG.get("arbitrator.vlm_queue_max", 5)
+        self._env_max = CONFIG.get("arbitrator.env_queue_max", 3)
+        self._vlm_timeout = CONFIG.get("arbitrator.vlm_timeout", 8.0)
+        self._vlm_survival = CONFIG.get("arbitrator.vlm_survival_interval", 4.0)
+        self._env_rate_limit = CONFIG.get("arbitrator.env_rate_limit", 1.5)
+        self._throttle_window = CONFIG.get("speech.throttle_window", 1.5)
+        self._vlm_force_interval = CONFIG.get("arbitrator.vlm_force_interval", 4.0)
+        self._vlm_survival_force = CONFIG.get("arbitrator.vlm_survival_force", 5.0)
+        self._env_blocked_threshold = CONFIG.get("arbitrator.env_blocked_threshold", 3)
+
         # --- 三队列独立管理 ---
-        self.warning_queue = []   # priority=1, max=3, 永不去丢(满则替换最旧)
-        self.vlm_queue = []       # priority=2, max=5, FIFO 丢最旧
-        self.env_queue = []       # priority=3, max=3, 满则拒新
+        self.warning_queue = []
+        self.vlm_queue = []
+        self.env_queue = []
 
         # --- 调度器状态 ---
         self.cycle = ["VLM", "ENV", "ENV"]   # WARNING 已全局优先，cycle 为普通轮询
@@ -49,15 +61,15 @@ class SpeechArbitrator:
         qs = {"w": len(self.warning_queue), "v": len(self.vlm_queue), "e": len(self.env_queue)}
         print("[TRACE][ARBITRATOR_IN]", f"id={tid} source={src} priority={priority} queues={qs}")
 
-        # ---- VLM 8s 超时检查 ----
+        # ---- VLM 超时检查 ----
         if src == "vlm":
-            if now - item["time"] > 8.0:
+            if now - item["time"] > self._vlm_timeout:
                 print("[TRACE][DROP]", f"id={tid} reason=expired")
                 return
 
-        # ---- ENV 速率限制 ≥ 1.5s ----
+        # ---- ENV 速率限制 ----
         if priority == 3:
-            if now - self.last_accept_time < 1.5:
+            if now - self.last_accept_time < self._env_rate_limit:
                 print("[TRACE][DROP]", f"id={tid} reason=rejected_rate_limit")
                 return
             self.last_accept_time = now
@@ -68,7 +80,7 @@ class SpeechArbitrator:
         elif priority == 2:
             self._push_vlm(item)
         elif priority == 3:
-            if len(self.env_queue) >= 3:
+            if len(self.env_queue) >= self._env_max:
                 print("[TRACE][DROP]", f"id={tid} reason=rejected_queue_full(env)")
                 return
             self._push_env(item)
@@ -77,19 +89,18 @@ class SpeechArbitrator:
         self.system_overloaded = len(self.vlm_queue) >= 3
 
     def _push_warning(self, item):
-        """WARNING_QUEUE: max=3, 永不去丢, 满则替换最旧"""
-        if len(self.warning_queue) >= 3:
+        if len(self.warning_queue) >= self._warn_max:
             self.warning_queue.pop(0)
         self.warning_queue.append(item)
 
     def _push_vlm(self, item):
-        """VLM_QUEUE: max=5, FIFO, 满则丢最旧"""
-        if len(self.vlm_queue) >= 5:
+        if len(self.vlm_queue) >= self._vlm_max:
             self.vlm_queue.pop(0)
         self.vlm_queue.append(item)
 
     def _push_env(self, item):
-        """ENV_QUEUE: max=3"""
+        if len(self.env_queue) >= self._env_max:
+            return
         self.env_queue.append(item)
 
     # ==================================================================
@@ -101,7 +112,7 @@ class SpeechArbitrator:
         bypass_throttle = False
 
         # ---- 1. VLM 保活 ----
-        if now - self.last_vlm_play_time > 4.0 and self.vlm_queue:
+        if now - self.last_vlm_play_time > self._vlm_survival and self.vlm_queue:
             item = self._pop_vlm()
             self.consecutive_warnings = 0
             bypass_throttle = True
@@ -119,7 +130,7 @@ class SpeechArbitrator:
 
         else:
             # ---- 4. ENV 降级 ----
-            env_blocked = len(self.vlm_queue) > 3
+            env_blocked = len(self.vlm_queue) > self._env_blocked_threshold
             if env_blocked and self.vlm_queue:
                 item = self._pop_vlm()
                 self.consecutive_warnings = 0
@@ -154,12 +165,11 @@ class SpeechArbitrator:
         return item
 
     def _apply_throttle(self, item, bypass=False):
-        """播放节流：1.5s 内禁止连续播放非 WARNING 条目。
-           WARNING 始终放行；bypass=True（VLM保活/交错）或 item.bypass_throttle 绕过。"""
+        """播放节流：WARNING 始终放行；bypass True 绕过；item.bypass_throttle 绕过。"""
         if bypass or item.get("bypass_throttle"):
             return item
         now = time.time()
-        if now - self.last_play_time >= 1.5:
+        if now - self.last_play_time >= self._throttle_window:
             return item
 
         prio = item.get("priority", 3)
@@ -206,9 +216,9 @@ class SpeechArbitrator:
     def can_play_vlm(self):
         now = time.time()
         normal = now - self.last_decision_time >= 1.0
-        force = now - self.last_vlm_play_time > 4.0
+        force = now - self.last_vlm_play_time > self._vlm_force_interval
         user_window = now - self.last_user_query_time < 3.0
-        vlm_survival = now - self.last_vlm_play_time > 5.0
+        vlm_survival = now - self.last_vlm_play_time > self._vlm_survival_force
         return normal or force or user_window or vlm_survival
 
     def mark_decision(self):

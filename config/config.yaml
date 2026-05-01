@@ -1,0 +1,78 @@
+# edge-visionQA 基础配置
+
+profile: pc                  # 默认 profile（环境变量 EDGE_VISION_PROFILE 优先）
+
+app:
+  name: edge-visionQA
+  version: "1.0"
+
+speech:
+  min_interval: 2.0         # 最小播报间隔 (s)
+  stable_count: 3            # 场景稳定帧数
+  play_duration: 2.5         # 单条播报时长 (s)
+  throttle_window: 1.5       # 节流窗口 (s)
+  speech_budget_window: 5.0  # OutputPolicy Budget 窗口 (s)
+  speech_budget_max: 2       # 窗口内最大播报数
+
+arbitrator:
+  warning_queue_max: 3       # WARNING 队列容量
+  vlm_queue_max: 5           # VLM 队列容量
+  env_queue_max: 3           # ENV 队列容量
+  vlm_timeout: 8.0           # VLM 超时 (s)
+  vlm_survival_interval: 4.0 # VLM 保活间隔 (s)
+  vlm_force_interval: 4.0    # can_play_vlm force 间隔 (s)
+  vlm_survival_force: 5.0    # can_play_vlm survival 间隔 (s)
+  env_rate_limit: 1.5        # ENV 入队速率限制 (s)
+  env_blocked_threshold: 3   # ENV 降级阈值 (vlm 积压数)
+  cycle: ["VLM", "ENV", "ENV"]  # 加权轮询顺序
+
+decision:
+  broadcast_interval: 2.5    # 基础播报间隔 (s)
+  repeat_interval: 3.0       # 同物体重复播报最小间隔 (s)
+  persistence_threshold: 3.0 # 持续存在阈值 (s)
+  history_limit: 5           # 追踪历史长度
+  env_noise_suppress: true   # ENV 降噪开关
+
+user_focus:
+  timeout: 5.0               # USER_FOCUS 超时 (s)
+  conversation_window: 3.0   # 对话优先级窗口 (s)
+
+cold_start:
+  duration: 2.0              # 冷启动窗口 (s)
+
+yolo:
+  conf_threshold: 0.5
+  imgsz: 320
+  detect_interval: 2          # 每 N 帧检测一次
+
+camera:
+  width: 640
+  height: 480
+  fps: 30
+
+vlm:
+  scheduler_interval: 3.0    # VLM 调度间隔 (s)
+  max_queue: 1               # VLM 请求队列容量 (1=只保留最新)
+  simulate_delay: 0.0        # 模拟延迟 (s), 0=禁用
+  model: qwen3.5-flash
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+
+tts:
+  backend: piper              # piper | dashscope
+  language: zh-CN
+  model: cosyvoice-v1
+  voice: longshuo
+
+asr:
+  backend: dashscope          # dashscope | vosk
+  language: zh-CN
+
+logging:
+  enable: false
+  max_log_entries: 500
+
+system:
+  fps_limit: 30
+  decision_interval: 0.5
+  enable_env: true
+  enable_vlm: true

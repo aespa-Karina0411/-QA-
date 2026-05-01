@@ -12,6 +12,7 @@ from collections import deque
 from typing import Optional
 
 from .vlm_cloud_adapter import VLMCloudAdapter
+from core.global_config import CONFIG
 
 
 class VLMManager:
@@ -25,6 +26,10 @@ class VLMManager:
         self.result_queue = deque()
         self.last_call_time = 0.0
 
+        self._scheduler_interval = CONFIG.get("vlm.scheduler_interval", 3.0)
+        self._max_queue = CONFIG.get("vlm.max_queue", 1)
+        self._simulate_delay = CONFIG.get("vlm.simulate_delay", 0.0)
+
         threading.Thread(target=self._scheduler_loop, name="vlm-scheduler", daemon=True).start()
 
     def ask_async(
@@ -34,10 +39,12 @@ class VLMManager:
         context: dict,
         version: int = 0,
     ) -> None:
-        """入队 VLM 请求（非阻塞）— 只保留最新请求"""
+        """入队 VLM 请求（非阻塞）"""
         with self.lock:
-            # 清空旧请求，只保留最新
-            self.queue.clear()
+            if self._max_queue == 1:
+                self.queue.clear()
+            elif len(self.queue) >= self._max_queue:
+                self.queue.popleft()
 
             self.queue.append({
                 "image": image,
@@ -57,7 +64,7 @@ class VLMManager:
         while True:
             task = None
             with self.lock:
-                if self.queue and time.time() - self.last_call_time >= 3.0:
+                if self.queue and time.time() - self.last_call_time >= self._scheduler_interval:
                     task = self.queue.popleft()
                     self.last_call_time = time.time()
 
@@ -111,6 +118,10 @@ class VLMManager:
             })
 
             answer = self.cloud_adapter.ask(messages)
+
+            if self._simulate_delay > 0:
+                time.sleep(self._simulate_delay)
+
             if not answer or not answer.strip():
                 result = "我暂时无法判断，可以换个角度再试一下"
                 is_fallback = True

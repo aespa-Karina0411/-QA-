@@ -7,6 +7,7 @@ import cv2
 from perception.spatial_adapter import SpatialParserAdapter
 from asr.asrmanager import ASRManager
 from core.controller import Controller
+from core.global_config import CONFIG
 from perception.decision_utils import DecisionMaker
 from perception.speech_manager import SpeechManager
 from tts import tts_local_utils
@@ -87,7 +88,8 @@ def main():
     print("系统已启动。按 'a' 开始语音输入，按 'q' 退出。")
     controller._play_startup_message()
     frame_count = 0
-    detect_interval = 2
+    detect_interval = CONFIG.get("yolo.detect_interval", 2)
+    fps_limit = CONFIG.get("system.fps_limit", 30)
 
     try:
         while True:
@@ -121,7 +123,8 @@ def main():
                 print(f"[System] 模式: {res['mode']}, 回复: {res.get('response')}")
 
             cv2.imshow("Edge Vision", frame)
-            key = cv2.waitKey(1) & 0xFF
+            wait_ms = max(1, int(1000.0 / fps_limit))
+            key = cv2.waitKey(wait_ms) & 0xFF
 
             controller._poll_vlm_results()
             controller._drain_arbitrator()

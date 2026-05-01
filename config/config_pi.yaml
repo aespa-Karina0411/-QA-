@@ -1,0 +1,21 @@
+# 树莓派部署环境 — 仅覆盖差异字段
+
+yolo:
+  conf_threshold: 0.45         # 树莓派: 略降低阈值
+  imgsz: 256                   # 树莓派: 降分辨率
+  detect_interval: 3            # 树莓派: 增大检测间隔
+
+camera:
+  width: 320                    # 树莓派: 降分辨率
+  height: 240
+  fps: 15
+
+asr:
+  backend: vosk                 # 树莓派: 本地 Vosk 离线 ASR
+
+vlm:
+  scheduler_interval: 5.0       # 树莓派: 增大 VLM 间隔
+
+logging:
+  enable: false                 # 树莓派: 关闭日志
+  max_log_entries: 100

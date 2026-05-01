@@ -17,6 +17,7 @@ from vlm.vlm_manager import VLMManager
 
 from .EnvironmentDescriber import EnvironmentDescription
 from .intent_parser import IntentParser, IntentType
+from core.global_config import CONFIG
 
 
 class Controller:
@@ -78,6 +79,10 @@ class Controller:
         self.cold_start_start_time = time.time()
         self.cold_start_duration = 2.0
 
+        # 配置驱动的限频控制
+        self._last_decision_time = 0.0
+        self._decision_interval = CONFIG.get("system.decision_interval", 0.5)
+
         self.context = {}
         self.context.setdefault("scene", {
             "objects": [],
@@ -128,6 +133,14 @@ class Controller:
         """处理来自感知层的导航更新事件。"""
         if self.is_startup_phase:
             return {"mode": self.mode, "speech": {"spoken": False, "reason": "startup_phase"}}
+
+        # 配置限频
+        if timestamp - self._last_decision_time < self._decision_interval:
+            return {"mode": self.mode, "speech": {"spoken": False}}
+        self._last_decision_time = timestamp
+
+        if not CONFIG.get("system.enable_env", True):
+            return {"mode": self.mode, "speech": {"spoken": False, "reason": "env_disabled"}}
         raw_objects = data.get("objects", [])
         frame_shape = data.get("frame_shape", (0, 0))
         env_data = self.spatial_parser.parse(raw_objects, frame_shape)
@@ -295,7 +308,10 @@ class Controller:
         elif intent_result.intent == IntentType.SCENE_QA:
             response = local_scene_qa(self.context, intent_result.text)
         elif intent_result.intent == IntentType.GENERAL_QA:
-            image = self.context.get("current_image")
+            if not CONFIG.get("system.enable_vlm", True):
+                response = "VLM 功能已关闭。"
+            else:
+                image = self.context.get("current_image")
             if not image:
                 response = "当前没有图像可供分析。"
             else:
