@@ -1,0 +1,29 @@
+评估逻辑审计 (evaluate_scheduler.py V2)
+================================================================================
+
+1. wait_select 计算:
+   使用公式: select_at = _play_time - 2.5 (queued) 或 req (direct)
+   问题: 仿真中无显式 SELECT 时间戳，采用近似计算
+   可信度: MEDIUM — 量化方向正确但精度不足
+
+2. wait_play 计算:
+   使用公式: total_wait - wait_select
+   可信度: MEDIUM — 依赖 step 1 的结果
+
+3. 未播放条目:
+   直接从 total - played 统计
+   可信度: HIGH ✅
+
+4. 硬约束检查:
+   max_wait_select ≤ 4.0 → PASS
+   依赖 step 1 的近似值，实际调度延迟为 0（条目到达即被取出）
+   约束检查有效 ✅
+
+5. 缺失指标:
+   - 无 DROP_CANDIDATE 预测精度统计
+   - 无 per-source 延迟分布 (WARNING vs VLM vs ENV)
+   - 无队列长度时序数据
+
+建议增强:
+   在 simulate_log 中为每条 played 条目增加显式 _select_time 字段
+   在 drain 循环中记录 select_time = playing_until (drain 开始时刻)

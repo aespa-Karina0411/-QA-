@@ -3,3 +3,16 @@
 {"ts": 1777648764.2184687, "event": "PLAY", "id": "f0f28d", "source": "startup", "priority": 0}
 {"ts": 1777648782.9454794, "event": "PLAY", "id": "ff120c", "source": "decision", "priority": 1}
 {"ts": 1777648790.9556243, "event": "PLAY", "id": "d326d9", "source": "vlm", "priority": 2}
+{"ts": 1777700847.8381357, "event": "PLAY", "id": "b592b3", "source": "startup", "priority": 0}
+{"ts": 1777700859.434183, "event": "VLM_SCORE_SELECT", "id": "27fbb4", "wait": 0.03, "score": 10.0, "aging": false}
+{"ts": 1777700859.435099, "event": "PLAY", "id": "27fbb4", "source": "user_direct", "priority": 2}
+{"ts": 1777700865.4840684, "event": "PLAY", "id": "363b83", "source": "decision", "priority": 1}
+{"ts": 1777700871.0576184, "event": "PLAY", "id": "ab82a8", "source": "vlm", "priority": 2}
+{"ts": 1777700875.107354, "event": "PLAY", "id": "80505c", "source": "decision", "priority": 1}
+{"ts": 1777700889.456442, "event": "PLAY", "id": "ce6586", "source": "vlm", "priority": 2}
+{"ts": 1777700915.008565, "event": "VLM_SCORE_SELECT", "id": "b0986e", "wait": 0.04, "score": 10.0, "aging": false}
+{"ts": 1777700915.0097106, "event": "PLAY", "id": "b0986e", "source": "user_direct", "priority": 2}
+{"ts": 1777700922.0649848, "event": "VLM_SCORE_SELECT", "id": "f4b7e1", "wait": 0.03, "score": 10.0, "aging": false}
+{"ts": 1777700922.0657341, "event": "PLAY", "id": "f4b7e1", "source": "user_direct", "priority": 2}
+{"ts": 1777700929.9797835, "event": "PLAY", "id": "c045f2", "source": "decision", "priority": 1}
+{"ts": 1777700937.9760594, "event": "PLAY", "id": "066ed0", "source": "vlm", "priority": 2}

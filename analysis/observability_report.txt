@@ -1,0 +1,41 @@
+观测层与评估层审计总报告
+================================================================================
+日期: 2026-05-02
+
+一、生命周期完整性
+------------------
+  VLM 标准生命周期: SUBMIT → SELECT → PLAY
+  当前 trace 覆盖: SUBMIT ✅, PLAY ✅, SELECT ⚠ (仅 aging/forced 条目有显式时间戳)
+  
+  缺失: 非 aging 条目的 SELECT 时间戳，导致 wait_select 依赖近似计算
+  建议: 在 simulate_log 的 drain 循环中为所有 _pick_next 返回值增加 _select_time
+
+二、数据一致性问题
+------------------
+  ✅ trace_id 唯一性: uid() 序列单调递增无重复
+  ✅ SUBMIT 到 PLAY 的 1:1 关系: 每个 played 条目恰好一次 play
+  ✅ 不存在 SELECT 但无 SUBMIT: 所有 aged 标记均来自合法条目
+  ✅ 不存在 PLAY 但无 SELECT: 仿真 drain 链确保 select→play 连续
+
+  ⚠ DROP_CANDIDATE 数量 (71) > 未播放数量 (65): 
+     6 条被标记但仍播放，说明标记在 submit 时条件成立但条目在调度过程中被 aging/force_play 挽救
+     这证明 E0 的"仅标记不丢弃"策略有价值——如果标记即丢弃，这 6 条将被误杀
+
+三、evaluate 是否可信
+------------------
+  evaluate_scheduler.py V2:
+  - wait_total: 可信 (直接用 _play_time - submit_time) ✅
+  - wait_select: 部分可信 (近似计算) ⚠
+  - wait_play: 部分可信 (依赖 wait_select) ⚠
+  - 硬约束检查: 可信 (依赖 wait_select 近似值但有方向正确性) ✅
+
+  总评: evaluate 提供的趋势和约束检查可信，但精度依赖 _select_time 的显式记录
+
+四、是否存在盲区
+------------------
+  ✅ 所有未播放条目均有 DROP_CANDIDATE 标记 — 不存在"静默丢失"
+  ✅ 所有 played 条目均可追溯到完整 trace 链
+  ⚠ 队列内部状态（FIFO eviction 的具体丢弃条目）在 run_log.json 中无显式记录
+     在 trace.jsonl (observability layer) 中有 DROP 和 DROP_CANDIDATE 日志
+     但 eviction 条目仅从队列中被 pop(0) 移除，无专门 trace 事件
+  ⚠ ENV 条目的背压拒绝 (rejected_backpressure) 无独立的 trace 事件类型

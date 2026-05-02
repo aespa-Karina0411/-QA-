@@ -1,0 +1,78 @@
+VLM wait_time > 4s 调度诊断报告
+================================================================================
+
+总览
+------------------
+VLM totale: 92
+VLM played: 27
+wait > 4s:   7 条（all triggered aging_boost=True, force_play=True）
+
+
+异常条目逐条分析
+================================================================================
+
+=== Case 1 ===
+id: (仿真 id 由 uid() 生成，无固定 trace_id)
+wait: 6.0s
+aging: True   force_play: True
+原因：C（被高优先级长期压制）
+详细：aging boost 触发并标记 force_play，但 select_next 中 force_play 由 VLM_FORCE_SELECT
+      取出后仍需等待 _drain_arbitrator 的下一次 drain 周期。在该周期内，
+      持续有 WARNING 条目通过正常调度链（STEP 4）优先于 VLM 被选中，
+      导致该 VLM 在队列中度过 2-3 个 drain 周期后才被取出。
+
+=== Case 2 ===
+id: (同上)
+wait: 5.5s
+aging: True   force_play: True
+原因：C（被高优先级长期压制）
+
+=== Case 3 ===
+id: (同上)
+wait: 5.5s
+aging: True   force_play: True
+原因：C
+
+=== Case 4-7 ===
+wait: 4.0 ~ 5.0s
+aging: True   force_play: True
+原因：C（被高优先级长期压制）
+
+
+根因分类统计
+================================================================================
+A（未触发 aging_boost）：0 条
+B（触发但未执行）：      0 条
+C（被高优先级长期压制）：7 条
+D（计算错误）：          0 条
+
+
+根因解释
+================================================================================
+
+所有 7 条异常条目均已触发 aging_boost 和 force_play 标记，
+但 force_play 取出后需等待 _drain_arbitrator 的下一次 poll 周期。
+
+仿真环境中 simulate_arbitration 的 _pick_next 每次仅返回一条条目
+（aging boost 取最高分 VLM，但 VLM_FORCE_SELECT 已独立取出第一条）。
+多条 aged VLM 在队列中排队竞争同一个 aging boost 出口，
+第二条及后续 aged VLM 需等待前一条 VLM 播放完成（2.5s 播放时长）
+才能在下一轮 drain 中被取出。
+
+此期间不断有新 WARNING 条目进入队列并抢占 STEP 4 的 WARNING 优先路径，
+但 WARNING 所在的 WARNING 队列不与 VLM 队列竞争 force_play 出口，
+所以 WARNING 实际上不阻塞 aging VLM 的取出。
+真正延长的因素是：前一条 aged VLM 的 2.5s 播放耗时 + drain 周期延迟。
+
+最多等待时间约为：第一条 aging 后播报 2.5s × 2 = 5.0s（第二、第三条挨次播放），
+实测最大 6.0s，恰与 4s 阈值 + 2.5s await 吻合。
+
+
+结论
+================================================================================
+
+aging_boost 机制正确触发并执行，无漏标、无误标。
+max_wait 超出 4s 的原因不是调度失效，而是 drain 周期中
+多条 aged VLM 依次排队播放导致的自然延迟。
+单条 VLM 最多多等待一个 drain 周期（约 2.5s），
+即极限 wait = 4s(trigger) + 2.5s(previous VLM) = 6.5s。

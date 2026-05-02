@@ -1,0 +1,22 @@
+{
+  "max_wait_queue": 6.0,
+  "avg_wait_queue": 2.9,
+  "max_wait_time": 6.0,
+  "avg_wait_time": 2.9,
+  "max_wait_total": 6.0,
+  "max_wait_select": 0,
+  "max_wait_play": 6.0,
+  "total_entries": 410,
+  "played": 47,
+  "dropped": 71,
+  "warnings_dropped": 0,
+  "vlm_total": 92,
+  "vlm_played": 27,
+  "vlm_play_rate": 29.3,
+  "output_rate": 11.5,
+  "deadlock_count": 0,
+  "vlm_starved": 65,
+  "model": "lazy_scheduling",
+  "queue_dominant": true,
+  "select_latency_meaningful": false
+}

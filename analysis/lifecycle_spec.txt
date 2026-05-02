@@ -1,0 +1,24 @@
+VLM条目标准生命周期规范
+================================================================================
+
+完整路径:
+  SUBMIT → SELECT → PLAY
+
+可选分支:
+  SUBMIT → DROP_CANDIDATE  (标记为潜在丢弃对象，但不终止)
+  SUBMIT → (未播放, 最终消失)  (队列满/超时/仿真结束)
+
+事件定义:
+  SUBMIT: 条目提交到仲裁器的时间 (submit_ts)
+  SELECT: 被调度器选中准备播放的时间 (select_ts)
+  PLAY:   实际送入语音管理器播放的时间 (play_ts)
+
+指标计算:
+  wait_select = select_ts - submit_ts    (调度延迟)
+  wait_play   = play_ts - select_ts      (输出延迟)
+  wait_total  = play_ts - submit_ts      (总延迟)
+
+DROP_CANDIDATE:
+  发生在 SUBMIT 时，仅标记 drop_candidate=True
+  不终止生命周期，条目继续走完整路径
+  用于后续 E1 阶段的选择性丢弃决策

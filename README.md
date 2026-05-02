@@ -78,23 +78,23 @@ Camera → YOLO                    ASR → IntentParser
 
 ## 核心模块
 
-### SpeechArbitrator — 三队列语音仲裁
+### SpeechArbitrator — 多队列调度系统
 
-工业级多队列调度器，替代传统单队列 priority sort 架构：
+三队列独立仲裁，替换传统单队列 priority sort：
 
 | 队列 | 容量 | 策略 | 作用 |
 |------|------|------|------|
 | `WARNING_QUEUE` | 3 | 永不丢弃，满则替换最旧 | 🚨 紧急警告（priority=1） |
-| `VLM_QUEUE` | 5 | LIFO 取最新，FIFO 丢旧 | 🤖 VLM 回答（priority=2） |
+| `VLM_QUEUE` | 5 | 评分策略层（score=base+wait×10） | 🤖 VLM 回答（priority=2） |
 | `ENV_QUEUE` | 3 | 满则拒新 | 📢 环境播报（priority=3） |
 
-调度器优先级链：`VLM保活 → 硬性交错 → WARNING优先 → ENV降级 → 加权轮询 → 兜底`
+调度器优先级链：`USER_FOCUS保留槽 → Aging Boost(>4s) → VLM保活(>4s) → WARNING优先 → ENV降级 → 加权轮询[VLM,ENV,ENV] → 兜底`
 
-### SpeechManager — 两级异步播放
+### SpeechManager — speech_lock 播放锁
 
 - **消息队列**（`PriorityQueue`）：`_run_consumer` 每 0.5s drain，同 source 消息合并
 - **播放队列**（`_play_queue`）：唯一 daemon 线程串行消费，永不并发
-- **打断机制**：interrupt 消息跳队打断当前播放
+- **speech_lock**：WARNING 可打断任意播放，VLM 原子不可中断，ENV 跳过已锁
 
 ### DecisionMaker — 5 层决策引擎
 
@@ -183,38 +183,43 @@ python run_validation.py  # 运行验证 → PASS/FAIL
 edge-visionQA/
 ├── core/
 │   ├── controller.py          # 系统中枢（事件驱动 + 状态管理）
-│   ├── intent_parser.py       # 关键词意图解析
+│   ├── config_loader.py       # 配置加载器（YAML + deep merge）
+│   ├── global_config.py       # 全局 CONFIG 单例
+│   ├── intent_parser.py       # 关键词意图解析 + slots 提取
+│   ├── response_router.py     # 智能响应路由（ENV_QUERY / OBJECT_QUERY）
 │   └── EnvironmentDescriber.py
 ├── perception/
-│   ├── speech_arbitrator.py   # 三队列语音仲裁（核心调度器）
-│   ├── speech_manager.py      # 两级 PriorityQueue 异步播放
+│   ├── speech_arbitrator.py   # 多队列调度器（WARNING/VLM/ENV + scoring + aging boost）
+│   ├── speech_manager.py      # 两级 PriorityQueue + speech_lock
 │   ├── output_policy.py       # 输出策略层（Budget + 降噪）
 │   ├── decision_utils.py      # 5 层决策引擎
 │   ├── spatial_utils.py       # 结构化语义 + 距离平滑迟滞
 │   └── yolo_utils.py          # YOLO 检测封装
 ├── vlm/
-│   ├── vlm_manager.py         # VLM 异步队列（deque + scheduler）
+│   ├── vlm_manager.py         # VLM 异步队列（clear+keep-latest + scheduler）
 │   ├── vlm_cloud_adapter.py   # 云端 API 适配层
 │   ├── vlm_intent_parser.py   # VLM 意图解析 + 结构化 prompt
 │   └── providers/
-├── expression/
-│   ├── expression_engine.py   # 模板库 + 随机选择 + 风格处理
-│   ├── templates.py
-│   └── style.py
-├── tts/
-│   └── tts_backend.py         # TTS 抽象接口
-├── asr/
-│   └── asrmanager.py          # ASR 实时语音识别
+├── observe/
+│   └── trace_logger.py        # JSONL 结构化日志（DROP_CANDIDATE / SELECT / PLAY）
+├── analysis/
+│   ├── pipeline.py            # 一键评估流水线（simulate→evaluate→compare→archive）
+│   ├── evaluate_scheduler.py  # 调度评估（wait_queue，lazy scheduling）
+│   └── compare_reports.py     # 跨版本对比
+├── expression/                # 模板库 + 风格后处理
+├── tts/                       # TTS 抽象接口
+├── asr/                       # ASR 实时语音识别
+├── config/                    # YAML 配置文件（base + pc + pi profile）
 ├── tests/
-│   ├── simulate_log.py        # 压测数据生成（304 条目/120s）
-│   ├── log_analyzer.py        # 9 项自动化检测器
+│   ├── validation/            # 统一验证框架（5 项自动化检测）
+│   ├── scenarios/             # 真实 Controller 驱动场景
+│   ├── tools/                 # 诊断工具
 │   ├── run_validation.py      # 一键 PASS/FAIL
-│   └── test_real_pipeline.py  # 真实链路验证
-├── model/
+│   ├── simulate_log.py        # 压测数据生成
+│   └── log_analyzer.py        # 极端压测分析器
+├── docs/                      # 操作手册 + 测试流程 + 日志回收说明
 ├── main.py                    # 入口
-├── config.py
-├── requirements.txt
-└── README.md
+└── config.py                  # 配置兼容层
 ```
 
 ---
@@ -224,11 +229,55 @@ edge-visionQA/
 系统提供完整的自动化验证工具链：
 
 ```bash
+# 一键验证框架
 cd tests
-python simulate_log.py          # 生成极限压测数据
-python log_analyzer.py           # 7 项指标自动化检测
-python run_validation.py         # 一键 PASS/FAIL
-python diagnose_trace.py         # 全链路追踪诊断
+python run_validation.py          # 5 项自动化检测 → PASS/FAIL
+
+# 自动评估流水线
+cd analysis
+python pipeline.py                 # simulate → evaluate → archive → compare
+```
+
+| 检测器 | 方法 | PASS 条件 |
+|--------|------|-----------|
+| 重复播报 | 连续两条 played 且 text 相同 | 0 |
+| 漏报 | 物体距离从 较远→很近 但未播报 | 0 |
+| 抖动 | 距离变化率 > 帧数 50% | ≤1 |
+| VLM 打断 | VLM 播放距上一个播放 < 1.5s | 0 |
+| VLM 饥饿 | VLM 请求 >5s 未播放 | ≤1 |
+| 顺序违规 | 低优先级抢占高优先级 | 0 |
+| 队列溢出 | overflow 总次数 | ≤10 |
+| 播报频率 | played 平均间隔 | 1.5~5s |
+
+## 评估流水线
+
+analysis/pipeline.py 一键执行：
+
+```bash
+cd analysis
+python pipeline.py
+```
+
+流程：
+
+1. simulate_log.py 生成 410 条压力事件
+2. evaluate_scheduler.py 计算 max_wait_queue / vlm_play_rate / starvation
+3. 自动归档到 analysis/history/EVAL_YYYYMMDD_HHMMSS/
+4. 与上一次结果对比输出 diff.txt
+
+典型输出：
+
+```
+=== EVALUATION SUMMARY (V3) ===
+max_wait_queue:  6.0s
+avg_wait_queue:  2.9s
+vlm_play_rate:   29.3%
+
+=== SYSTEM PROPERTIES ===
+no_deadlock:            PASS
+warnings_dropped:        PASS
+bounded_starvation:     PASS (aging boost verified)
+note: lazy scheduling system, queue delay dominates total latency
 ```
 
 | 检测器 | 方法 | PASS 条件 |

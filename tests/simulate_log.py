@@ -1,351 +1,475 @@
-"""Extreme Break-the-System Stress Test — 120s / 200+ entries"""
+"""Scenario-driven scheduler experiment generator."""
 
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from __future__ import annotations
 
 import json
 import random
+import sys
+import time
 from collections import Counter
+from pathlib import Path
+from typing import Any, Callable
 
-from config import SIMULATION_MODE
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from core.global_config import CONFIG
+from perception import speech_arbitrator as speech_arbitrator_module
+from perception.speech_arbitrator import SpeechArbitrator
+from observe.trace_logger import TraceLogger
 
 random.seed(42)
 
-# --- Mode-dependent parameters ---
-if SIMULATION_MODE == "stress":
-    DECISION_MIN = 0.5
-    DECISION_MAX = 0.8
-    VLM_INTERVAL = 2.0
-    SPIKE_INTERVAL = 15.0
-    SPIKE_COUNT_MIN = 20
-    SPIKE_COUNT_MAX = 30
-    BURST_PROB = 0.2
-    BURST_SIZE = 5
-else:
-    DECISION_MIN = 0.8
-    DECISION_MAX = 1.2
-    VLM_INTERVAL = 3.5
-    SPIKE_INTERVAL = 20.0
-    SPIKE_COUNT_MIN = 10
-    SPIKE_COUNT_MAX = 20
-    BURST_PROB = 0.05
-    BURST_SIZE = 2
+REAL_TIME = time.time
+REAL_SLEEP = time.sleep
+ACTIVE_RUNNER: "SimulationRunner | None" = None
 
-OBJECTS_POOL = ["行人", "汽车", "自行车", "公交车", "摩托车"]
-DIRECTIONS = ["左侧", "前方", "右侧"]
-DISTANCES = ["较远", "较近", "很近"]
-VLM_QUESTIONS = [
-    "前面有什么？", "这是什么？", "能帮我看看吗？", "有什么危险吗？",
-    "左边那个是什么？", "右边有什么？", "能描述一下环境吗？", "我前面还有多远？",
-    "那边是什么颜色？", "有人在我前面吗？", "有没有障碍物？", "帮我读一下那个标志",
-    "现在安全吗？", "能走吗？", "到路口还有多远？",
-    "这个路口怎么过？", "前面有台阶吗？", "红绿灯什么颜色？", "有没有斑马线？",
-    "帮我找一下公交站", "附近有地铁站吗？",
+PLAY_DURATION = float(CONFIG.get("speech.play_duration", 2.5))
+USER_FOCUS_TIMEOUT = float(CONFIG.get("user_focus.timeout", 5.0))
+
+ENV_TEXTS = [
+    "前方有行人",
+    "右侧有车辆",
+    "左侧有自行车",
+    "前方道路较空",
+    "右侧有公交车",
+    "左前方有台阶",
 ]
 
-_id = [0]
+WARNING_TEXTS = [
+    "前方存在碰撞风险",
+    "右侧车辆靠近",
+    "左侧有快速接近目标",
+    "前方障碍物距离很近",
+]
+
+VLM_TEXTS = [
+    "前面有什么？",
+    "右边有什么？",
+    "左边那个是什么？",
+    "有没有危险？",
+    "路口怎么过？",
+    "前方还有多远？",
+    "有没有障碍物？",
+    "红绿灯是什么颜色？",
+]
+
+USER_TEXTS = [
+    "帮我看看前面有什么",
+    "右边安全吗",
+    "能描述一下环境吗",
+    "有没有障碍物",
+]
 
 
-def uid():
-    _id[0] += 1
-    return _id[0]
+class VirtualClock:
+    def __init__(self, start_ts: float = 1_800_000_000.0):
+        self.current = start_ts
+
+    def time(self) -> float:
+        return self.current
+
+    def sleep(self, seconds: float) -> None:
+        seconds = max(float(seconds), 0.0)
+        if ACTIVE_RUNNER is None:
+            self.current += seconds
+            return
+        ACTIVE_RUNNER.advance(seconds)
 
 
-def make_entry(t, source, text, queued, played, queue_size=0, vlm_queue_size=0,
-               drop_reason=None, priority=None, objects=None, spoke=None,
-               vlm_request_time=None, vlm_response_time=None, vlm_played_time=None,
-               is_spike=False):
-    e = {
-        "time": t,
-        "source": source,
-        "text": text,
-        "queued": queued,
-        "played": played,
-        "queue_size": queue_size,
-        "vlm_queue_size": vlm_queue_size,
-    }
-    if drop_reason:
-        e["drop_reason"] = drop_reason
-    if priority is not None:
-        e["priority"] = priority
-    if objects is not None:
-        e["objects"] = objects
-    if spoke is not None:
-        e["spoke"] = spoke
-    if vlm_request_time is not None:
-        e["vlm_request_time"] = vlm_request_time
-    if vlm_response_time is not None:
-        e["vlm_response_time"] = vlm_response_time
-    if vlm_played_time is not None:
-        e["vlm_played_time"] = vlm_played_time
-    if is_spike:
-        e["is_spike"] = True
-    return e
+class SimulationRunner:
+    def __init__(self, output_path: Path):
+        self.output_path = output_path
+        self.compat_output_path = ROOT / "run_log.json"
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.output_path.exists():
+            self.output_path.unlink()
 
+        self.clock = VirtualClock()
+        self._patched_time = False
 
-def simulate_arbitration(entries):
-    """
-    多队列调度器模拟：
-    WARNING_QUEUE(max=3) | VLM_QUEUE(max=5) | ENV_QUEUE(max=3)
-    调度器: WARNING优先 → VLM保活(>5s) → 加权轮询[VLM,ENV,ENV]
-    """
-    warn_q = []     # priority=1, max=3, 满则替换最旧
-    vlm_q = []      # priority=2, max=5, FIFO丢最旧
-    env_q = []      # priority=3, max=3, 满则拒新
+        self.trace_logger = TraceLogger(str(self.output_path))
+        speech_arbitrator_module._trace_logger = self.trace_logger
+        self.arbitrator = SpeechArbitrator()
+        self.arbitrator.trace = self.trace_logger
 
-    playing_until = 0.0
-    last_vlm_play_time = 0.0
-    last_accept_time = 0.0
-    consecutive_warnings = 0   # WARNING 连续播放计数
+        self.playing_until: float | None = None
+        self.current_scene: str | None = None
+        self.trace_seq = 0
+        self.submitted_items: list[dict[str, Any]] = []
+        self.per_scene_counts: Counter[str] = Counter()
+        self.context: dict[str, Any] = {
+            "system": {
+                "user_focus": {
+                    "active": False,
+                    "enter_ts": 0.0,
+                    "timeout": USER_FOCUS_TIMEOUT,
+                }
+            }
+        }
 
-    CYCLE = ["VLM", "ENV", "ENV"]
-    cycle_idx = 0
-    PLAY_DURATION = 2.5
+    def patch_time(self) -> None:
+        global ACTIVE_RUNNER
+        if self._patched_time:
+            return
+        time.time = self.clock.time
+        time.sleep = self.clock.sleep
+        ACTIVE_RUNNER = self
+        self._patched_time = True
 
-    queue_snapshot = []
+    def restore_time(self) -> None:
+        global ACTIVE_RUNNER
+        if not self._patched_time:
+            return
+        time.time = REAL_TIME
+        time.sleep = REAL_SLEEP
+        ACTIVE_RUNNER = None
+        self._patched_time = False
 
-    def _pick_next(t_now):
-        nonlocal cycle_idx, last_vlm_play_time, consecutive_warnings
-        # Phase D: VLM Aging Boost
-        for qitem in list(vlm_q):
-            wait = t_now - qitem.get("enqueue_ts", t_now)
-            print(f"[DEBUG][SIM_VLM_WAIT] t={t_now:.1f} wait={wait:.1f}s qlen={len(vlm_q)}")
-            if wait > 1.0:
-                vlm_q.remove(qitem)
-                qitem["aging_boost"] = True
-                qitem["force_play"] = True
-                return qitem
-        # 1. VLM 保活（最优先非 WARNING 路径）
-        if t_now - last_vlm_play_time > 4.0 and vlm_q:
-            consecutive_warnings = 0
-            return vlm_q.pop()
-        # 2. 硬性交错：每 2 个连续 WARNING 后强制 VLM
-        if consecutive_warnings >= 2 and vlm_q:
-            consecutive_warnings = 0
-            return vlm_q.pop()
-        # 3. WARNING 优先
-        if warn_q:
-            consecutive_warnings += 1
-            return warn_q.pop(0)
-        # 4. ENV 降级
-        env_blocked = len(vlm_q) > 3
-        if env_blocked and vlm_q:
-            consecutive_warnings = 0
-            return vlm_q.pop()
-        # 5. 加权轮询
-        for _ in range(len(CYCLE)):
-            target = CYCLE[cycle_idx]
-            cycle_idx = (cycle_idx + 1) % len(CYCLE)
-            if target == "VLM" and vlm_q:
-                consecutive_warnings = 0
-                return vlm_q.pop()
-            if target == "ENV" and env_q and not env_blocked:
-                return env_q.pop(0)
-        # 6. 兜底
-        if vlm_q:
-            consecutive_warnings = 0
-            return vlm_q.pop()
-        if env_q and not env_blocked:
-            return env_q.pop(0)
-        return None
+    def run(self, scenarios: list[Callable[["SimulationRunner"], None]]) -> None:
+        self.patch_time()
+        try:
+            for scenario_fn in scenarios:
+                self.current_scene = scenario_fn.__name__
+                self.trace_logger.log("SCENARIO_START", scenario=self.current_scene)
+                scenario_fn(self)
+                self.trace_logger.log("SCENARIO_END", scenario=self.current_scene)
 
-    def _total_q():
-        return len(warn_q) + len(vlm_q) + len(env_q)
+            self.force_drain_idle()
+            self.write_compat_log()
+            self.validate()
+            self.print_summary()
+        finally:
+            self.restore_time()
 
-    for e in sorted(entries, key=lambda x: x["time"]):
-        t = e["time"]
-        src = e["source"]
-        prio = e.get("priority", 3)
-        req_t = e.get("_request_time", t)
-        resp_t = e.get("_response_time", t)
-        is_vlm = src == "vlm"
-
-        if is_vlm:
-            e["vlm_request_time"] = req_t
-            e["vlm_response_time"] = resp_t
-
-        # VLM 8s 超时
-        if is_vlm and t - req_t > 8.0:
-            e["queued"] = False
-            e["played"] = False
-            e["drop_reason"] = "expired"
-            e["queue_size"] = _total_q()
-            queue_snapshot.append((t, _total_q()))
-            continue
-
-        # ENV 速率限制
-        if prio == 3:
-            if t - last_accept_time < 1.5:
-                e["queued"] = False
-                e["played"] = False
-                e["drop_reason"] = "rejected_backpressure"
-                e["queue_size"] = _total_q()
-                queue_snapshot.append((t, _total_q()))
+    def advance(self, seconds: float) -> None:
+        target = self.clock.current + seconds
+        while True:
+            self.update_user_focus()
+            if self.playing_until is not None and self.playing_until <= target:
+                self.clock.current = self.playing_until
+                self.playing_until = None
+                self.update_user_focus()
+                self.try_start_playback()
                 continue
-            last_accept_time = t
 
-        e["source_queue"] = {1: "WARNING", 2: "VLM", 3: "ENV"}.get(prio, "ENV")
+            self.clock.current = target
+            self.update_user_focus()
+            if self.playing_until is None:
+                self.try_start_playback()
+            break
 
-        if t < playing_until:
-            # 正在播放中 → 入队
-            e["enqueue_ts"] = t
-            if prio == 1:
-                if len(warn_q) >= 3:
-                    warn_q.pop(0)  # 替换最旧
-                warn_q.append(e)
-                e["queued"] = True
-                e["played"] = False
-                e["queue_size"] = _total_q()
-            elif prio == 2:
-                if len(vlm_q) >= 5:
-                    vlm_q.pop(0)  # FIFO丢最旧
-                # E0: mark drop_candidate for LOW VLM near full
-                is_low = not e.get("aging_boost") and not e.get("force_play")
-                near_full = len(vlm_q) >= 4
-                if is_low and near_full:
-                    print(f"[TRACE][DROP_CANDIDATE] id={uid()} semantic=LOW queue_size={len(vlm_q)} reason=low_semantic_under_pressure")
-                vlm_q.append(e)
-                e["queued"] = True
-                e["played"] = False
-                e["queue_size"] = _total_q()
-            else:  # prio == 3
-                if len(env_q) >= 3:
-                    e["queued"] = False
-                    e["played"] = False
-                    e["drop_reason"] = "rejected_backpressure"
-                    e["queue_size"] = _total_q()
-                else:
-                    env_q.append(e)
-                    e["queued"] = True
-                    e["played"] = False
-                    e["queue_size"] = _total_q()
-        else:
-            # 可直接播放
-            e["queued"] = False
-            e["played"] = True
-            e["_play_time"] = t
-            if is_vlm:
-                e["vlm_played_time"] = t
-                last_vlm_play_time = t
-            e["queue_size"] = _total_q()
-            playing_until = t + PLAY_DURATION
-
-            # 调度器 drain：依次取出队列条目播放
-            while True:
-                qe = _pick_next(playing_until)
-                if qe is None:
+    def force_drain_idle(self) -> None:
+        while True:
+            if self.playing_until is None:
+                started = self.try_start_playback()
+                if not started:
                     break
-                qe["queued"] = True
-                qe["played"] = True
-                qe["_play_time"] = playing_until
-                qe["queue_size"] = _total_q()
-                if qe["source"] == "vlm":
-                    qe["vlm_played_time"] = playing_until
-                    last_vlm_play_time = playing_until
-                    qe["vlm_request_time"] = qe.get("_request_time", qe["time"])
-                    qe["vlm_response_time"] = qe.get("_response_time", qe["time"])
-                playing_until += PLAY_DURATION
-
-        queue_snapshot.append((t, _total_q()))
-
-    for e in entries:
-        for k in ("_arrived", "_request_time", "_response_time"):
-            e.pop(k, None)
-
-    max_q = max((q for _, q in queue_snapshot), default=0)
-    return entries, max_q, queue_snapshot
-
-
-def generate():
-    entries = []
-    t = 0.0
-
-    # ==================================================================
-    # 背景洪水：decision 每 0.8~1.2s（全程）
-    # ==================================================================
-    while t <= 120.0:
-        is_warning = random.random() < 0.20
-        prio = 1 if is_warning else 3
-        d1 = random.choice(DIRECTIONS)
-        c1 = random.choice(OBJECTS_POOL)
-        ds1 = random.choice(DISTANCES)
-        txt = f"D#{uid()}: {d1}{c1}{ds1}" + (" WARN" if is_warning else "")
-        e = make_entry(t, "decision", txt, False, False,
-                       priority=prio, spoke=is_warning)
-        entries.append(e)
-        t += DECISION_MIN + random.random() * (DECISION_MAX - DECISION_MIN)
-
-    # ==================================================================
-    # VLM 高频请求：每 3s 一次（全程）
-    # ==================================================================
-    for vt in [i * VLM_INTERVAL for i in range(int(120 / VLM_INTERVAL) + 1)]:
-        if vt > 120:
-            break
-        cat = random.choices([0, 1, 2, 3], weights=[35, 30, 20, 15])[0]
-        if cat == 0:
-            delay = 0.3 + random.random() * 0.5
-        elif cat == 1:
-            delay = 1.0 + random.random() * 1.0
-        elif cat == 2:
-            delay = 3.0 + random.random() * 2.0
-        else:
-            delay = 6.0 + random.random() * 2.0
-
-        resp_t = vt + delay
-        txt = f"V#{uid()}: {random.choice(VLM_QUESTIONS)}"
-        e = make_entry(resp_t, "vlm", txt, False, False, priority=2)
-        e["_request_time"] = vt
-        e["_response_time"] = resp_t
-        entries.append(e)
-
-    # ==================================================================
-    # 突发冲击 Spike：间隔和数量由模式决定
-    spike_starts = [i * SPIKE_INTERVAL for i in range(int(120 / SPIKE_INTERVAL) + 1)]
-    for spike_start in spike_starts:
-        if spike_start > 120:
-            break
-        count = random.randint(SPIKE_COUNT_MIN, SPIKE_COUNT_MAX)
-        spike_t = spike_start
-        for si in range(count):
-            spike_t = spike_start + (si / count) * 2.0
-            if spike_t > 120:
+            next_finish = self.playing_until
+            if next_finish is None:
                 break
+            self.clock.current = next_finish
+            self.playing_until = None
 
-            r = random.random()
-            if r < 0.15:
-                prio = 1
-                txt = f"SPW#{uid()}: {random.choice(DIRECTIONS)}{random.choice(OBJECTS_POOL)}危险！"
-                e = make_entry(spike_t, "decision", txt, False, False,
-                               priority=prio, spoke=True, is_spike=True)
-            elif r < 0.40:
-                txt = f"SPV#{uid()}: {random.choice(VLM_QUESTIONS)}"
-                e = make_entry(spike_t, "vlm", txt, False, False, priority=2, is_spike=True)
-                e["_request_time"] = spike_t
-                e["_response_time"] = spike_t
-            else:
-                prio = 3
-                txt = f"SPE#{uid()}: {random.choice(DIRECTIONS)}{random.choice(OBJECTS_POOL)}{random.choice(DISTANCES)}"
-                e = make_entry(spike_t, "decision", txt, False, False,
-                               priority=prio, is_spike=True)
-            entries.append(e)
+    def update_user_focus(self) -> None:
+        focus = self.context["system"]["user_focus"]
+        if focus.get("active") and self.clock.current - focus.get("enter_ts", 0.0) > focus.get("timeout", USER_FOCUS_TIMEOUT):
+            focus["active"] = False
+            self.trace_logger.log("USER_FOCUS_EXIT", scenario=self.current_scene)
 
-    entries, max_q, snapshots = simulate_arbitration(entries)
+    def start_user_focus(self, text: str) -> None:
+        focus = self.context["system"]["user_focus"]
+        focus["active"] = True
+        focus["enter_ts"] = self.clock.current
+        focus["timeout"] = USER_FOCUS_TIMEOUT
+        self.arbitrator.last_user_query_time = self.clock.current
+        self.trace_logger.log(
+            "user_input",
+            scenario=self.current_scene,
+            text=text,
+        )
+        self.trace_logger.log(
+            "USER_FOCUS_ENTER",
+            scenario=self.current_scene,
+            text=text,
+        )
 
-    with open("run_log.json", "w", encoding="utf-8") as f:
-        json.dump(entries, f, indent=2, ensure_ascii=False, default=str)
+    def submit_env(self, *, is_warning: bool = False, text: str | None = None) -> None:
+        priority = 1 if is_warning else 3
+        source = "decision"
+        default_text = random.choice(WARNING_TEXTS if is_warning else ENV_TEXTS)
+        self.submit_item(
+            source=source,
+            priority=priority,
+            text=text or default_text,
+        )
+        if is_warning:
+            self.arbitrator.mark_decision()
 
-    d_count = sum(1 for e in entries if e["source"] == "decision")
-    v_count = sum(1 for e in entries if e["source"] == "vlm")
-    played = sum(1 for e in entries if e["played"])
-    dropped = sum(1 for e in entries if not e.get("played"))
-    spike_count = sum(1 for e in entries if e.get("is_spike"))
-    from collections import Counter
-    drop_counts = Counter(e.get("drop_reason") for e in entries if e.get("drop_reason"))
-    print(f"[SIMULATE] {len(entries)} entries (spike={spike_count}), decision={d_count}, vlm={v_count}, played={played}")
-    print(f"  dropped={dropped}, max_queue={max_q}")
-    for reason, count in sorted(drop_counts.items()):
-        print(f"    {reason}: {count}")
+    def submit_vlm(
+        self,
+        *,
+        text: str | None = None,
+        force_play: bool = False,
+        user_focus: bool = False,
+    ) -> None:
+        self.submit_item(
+            source="vlm",
+            priority=2,
+            text=text or random.choice(VLM_TEXTS),
+            force_play=force_play,
+            user_focus=user_focus,
+        )
+
+    def submit_item(
+        self,
+        *,
+        source: str,
+        priority: int,
+        text: str,
+        force_play: bool = False,
+        user_focus: bool = False,
+    ) -> None:
+        scenario = self.current_scene or "unknown"
+        self.trace_seq += 1
+        trace_id = f"{scenario[:2]}-{self.trace_seq:04d}"
+        item = {
+            "trace_id": trace_id,
+            "source": source,
+            "priority": priority,
+            "text": text,
+            "time": time.time(),
+            "scenario": scenario,
+            "user_focus": user_focus,
+            "queued": False,
+            "played": False,
+        }
+        if force_play:
+            item["force_play"] = True
+
+        self.submitted_items.append(item)
+        self.per_scene_counts[scenario] += 1
+
+        self.trace_logger.log(
+            "SUBMIT",
+            id=trace_id,
+            source=source,
+            priority=priority,
+            scenario=scenario,
+            user_focus=user_focus,
+            force_play=force_play,
+            text=text,
+        )
+
+        self.arbitrator.submit(item, context=self.context)
+        if priority <= 1:
+            self.arbitrator.mark_decision()
+        self.try_start_playback()
+
+    def try_start_playback(self) -> bool:
+        if self.playing_until is not None:
+            return False
+
+        item = self.arbitrator.select_next()
+        if item is None:
+            return False
+
+        play_time = time.time()
+        item["played"] = True
+        item["_play_time"] = play_time
+        if item.get("source") == "vlm":
+            item["vlm_played_time"] = play_time
+            self.arbitrator.mark_vlm_played()
+
+        self.trace_logger.log(
+            "PLAY",
+            id=item.get("trace_id"),
+            source=item.get("source"),
+            priority=item.get("priority", 3),
+            scenario=item.get("scenario"),
+            user_focus=bool(item.get("user_focus", False)),
+            force_play=bool(item.get("force_play", False)),
+            aging_boost=bool(item.get("aging_boost", False)),
+        )
+
+        self.playing_until = play_time + PLAY_DURATION
+        return True
+
+    def validate(self) -> None:
+        records = []
+        with self.output_path.open("r", encoding="utf-8") as handle:
+            for raw in handle:
+                text = raw.strip()
+                if not text:
+                    continue
+                records.append(json.loads(text))
+
+        event_count = len(records)
+        event_types = Counter(record.get("event") for record in records)
+        aging_boost_count = sum(1 for record in records if record.get("aging_boost"))
+        user_focus_count = sum(1 for record in records if record.get("event") in {"USER_FOCUS_ENTER", "user_input"})
+
+        if event_count <= 300:
+            raise RuntimeError(f"event_count too low: {event_count}")
+        for required in ("VLM_SCORE_SELECT", "DROP_CANDIDATE", "PLAY"):
+            if event_types.get(required, 0) <= 0:
+                raise RuntimeError(f"required event missing: {required}")
+        if user_focus_count <= 0:
+            raise RuntimeError("USER_FOCUS was not triggered")
+        if aging_boost_count <= 0:
+            raise RuntimeError("Aging Boost was not triggered")
+
+    def print_summary(self) -> None:
+        records = []
+        with self.output_path.open("r", encoding="utf-8") as handle:
+            for raw in handle:
+                text = raw.strip()
+                if text:
+                    records.append(json.loads(text))
+
+        event_types = Counter(record.get("event") for record in records)
+        print(f"[SIMULATE] wrote {len(records)} events -> {self.output_path}")
+        print(f"[SIMULATE] compat log -> {self.compat_output_path}")
+        print(f"[SIMULATE] input items by scenario: {dict(self.per_scene_counts)}")
+        print(f"[SIMULATE] event types: {dict(sorted(event_types.items()))}")
+
+    def write_compat_log(self) -> None:
+        serializable: list[dict[str, Any]] = []
+        for item in self.submitted_items:
+            row = {
+                key: value
+                for key, value in item.items()
+                if key not in {"_throttled_once"}
+            }
+            serializable.append(row)
+
+        with self.compat_output_path.open("w", encoding="utf-8") as handle:
+            json.dump(serializable, handle, ensure_ascii=False, indent=2)
+
+
+def warmup(run: SimulationRunner) -> None:
+    for _ in range(10):
+        run.submit_env()
+        time.sleep(1.0)
+
+
+def normal(run: SimulationRunner) -> None:
+    run.start_user_focus(random.choice(USER_TEXTS))
+    time.sleep(1.0)
+    run.submit_vlm(text="我来先回答一次用户问题", force_play=True, user_focus=True)
+
+    duration = 60.0
+    env_times = schedule_times(duration, 1.5)
+    vlm_times = schedule_times(duration, 4.0)
+    all_times = sorted({*env_times, *vlm_times})
+    current = 0.0
+
+    for when in all_times:
+        time.sleep(when - current)
+        current = when
+        if when in env_times:
+            run.submit_env(is_warning=random.random() < 0.10)
+        if when in vlm_times:
+            run.submit_vlm()
+
+    time.sleep(max(duration - current, 0.0))
+
+
+def user_focus(run: SimulationRunner) -> None:
+    for index in range(3):
+        run.start_user_focus(USER_TEXTS[index % len(USER_TEXTS)])
+        time.sleep(0.3)
+        run.submit_env(text=f"USER_FOCUS 干扰 ENV #{index + 1}")
+        time.sleep(0.7)
+        run.submit_vlm(
+            text=f"USER_FOCUS 响应 #{index + 1}",
+            force_play=True,
+            user_focus=True,
+        )
+        time.sleep(4.0)
+
+
+def stress(run: SimulationRunner) -> None:
+    duration = 60.0
+    env_times = schedule_times(duration, 0.3)
+    vlm_times = schedule_times(duration, 1.0)
+    warning_times = schedule_times(duration, 2.0)
+    all_times = sorted({*env_times, *vlm_times, *warning_times})
+    current = 0.0
+
+    for when in all_times:
+        time.sleep(when - current)
+        current = when
+        if when in env_times:
+            run.submit_env()
+        if when in warning_times:
+            run.submit_env(is_warning=True)
+        if when in vlm_times:
+            run.submit_vlm()
+
+    time.sleep(max(duration - current, 0.0))
+
+
+def burst(run: SimulationRunner) -> None:
+    for index in range(8):
+        run.submit_vlm(text=f"突发 VLM 请求 #{index + 1}")
+        if index < 7:
+            time.sleep(0.5)
+
+
+def starvation_test(run: SimulationRunner) -> None:
+    duration = 10.0
+    warning_times = schedule_times(duration, 0.5)
+    vlm_times = schedule_times(duration, 2.0)
+    all_times = sorted({*warning_times, *vlm_times})
+    current = 0.0
+
+    for when in all_times:
+        time.sleep(when - current)
+        current = when
+        if when in warning_times:
+            run.submit_env(is_warning=True, text="饥饿测试 WARNING")
+        if when in vlm_times:
+            run.submit_vlm(text="饥饿测试 VLM")
+
+    time.sleep(max(duration - current, 0.0))
+
+
+def recovery(run: SimulationRunner) -> None:
+    for _ in range(15):
+        run.submit_env(text="恢复阶段 ENV")
+        time.sleep(2.0)
+
+
+SCENARIOS = [
+    warmup,
+    normal,
+    user_focus,
+    stress,
+    burst,
+    starvation_test,
+    recovery,
+]
+
+
+def schedule_times(duration: float, interval: float) -> set[float]:
+    values: set[float] = set()
+    index = 0
+    while True:
+        point = round(index * interval, 6)
+        if point >= duration:
+            break
+        values.add(point)
+        index += 1
+    return values
+
+
+def main() -> None:
+    output_path = ROOT / "logs" / "full_run.jsonl"
+    runner = SimulationRunner(output_path)
+    runner.run(SCENARIOS)
 
 
 if __name__ == "__main__":
-    generate()
+    main()

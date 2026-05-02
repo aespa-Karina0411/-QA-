@@ -1,0 +1,50 @@
+项目结构清理与分层重构报告
+================================================================================
+
+一、移动文件
+------------------
+utils/trace_logger.py → observe/trace_logger.py
+  (将日志观测模块从 utils/ 迁移至专门观测层)
+
+二、删除的文件/目录
+------------------
+utils/ （目录）
+  — 内容已迁移到 observe/，原始 import 全部更新
+
+三、import 修改点
+------------------
+perception/speech_arbitrator.py:6
+  before: from utils.trace_logger import TraceLogger
+  after:  from observe.trace_logger import TraceLogger
+
+tests/simulate_log.py:20
+  before: from utils.trace_logger import TraceLogger
+  after:  from observe.trace_logger import TraceLogger
+
+四、当前分层结构
+------------------
+edge-visionQA/
+├── core/              # 系统主流程（controller, config_loader, intent_parser, response_router）
+├── perception/        # 感知 + 调度（arbitrator, speech_manager, decision, spatial, yolo）
+├── vlm/               # VLM 异步管理 + 云端适配
+├── asr/               # 语音输入
+├── tts/               # 语音输出
+├── expression/        # 文本表达
+├── observe/           # 观测层（trace_logger）          ← 新增
+├── analysis/          # 评估层（pipeline, evaluate, compare）
+├── config/            # 配置文件（yaml）
+├── tests/             # 验证体系
+├── docs/              # 文档
+├── main.py            # 唯一入口
+└── config.py          # 兼容层
+
+五、验证结果
+------------------
+python tests/run_validation.py
+  全部 5 项 PASS
+  [REAL_PIPELINE]         PASS
+  [USER_FOCUS]            PASS
+  [PHASE_B_SPEECH_LOCK]   PASS
+  [PHASE_A_PATH_INTEGRITY] PASS
+  [EXTREME_STRESS]         PASS
+  === FINAL RESULT === PASS

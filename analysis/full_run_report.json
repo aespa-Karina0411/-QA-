@@ -1,0 +1,403 @@
+{
+  "meta": {
+    "input_path": "logs\\full_run.jsonl",
+    "generated_at": "2026-05-02T12:58:06",
+    "event_count": 589,
+    "invalid_line_count": 0,
+    "invalid_lines": [],
+    "event_type_counts": {
+      "DROP_CANDIDATE": 71,
+      "PLAY": 47,
+      "SCENARIO_END": 7,
+      "SCENARIO_START": 7,
+      "SUBMIT": 410,
+      "USER_FOCUS_ENTER": 4,
+      "USER_FOCUS_EXIT": 2,
+      "VLM_SCORE_SELECT": 37,
+      "user_input": 4
+    },
+    "play_source_counts": {
+      "decision": 20,
+      "vlm": 27
+    },
+    "time_range": {
+      "start_ts": 1800000000.0,
+      "end_ts": 1800000189.49999,
+      "duration_sec": 189.49999
+    }
+  },
+  "definitions": {
+    "warning_loss_rate": "lost_warning_candidates / observed_warning_candidates；仅当 trace 中出现非 PLAY 的 warning 候选事件时可计算。",
+    "user_focus_success_rate": "successful_user_queries / observed_user_queries；success 表示用户查询后先等到 VLM 或 user_direct 播放，且未被其他非 warning 播放抢先。",
+    "deadlock_count": "观测窗口内无 PLAY 的连续时间段中，时长 > 10s 的片段数。",
+    "order_violation_count": "对每个 VLM_SCORE_SELECT，若可从后续已选中的 VLM 反推出在该时刻已有 wait 更大的待播项，则记为 1 次违规。",
+    "jitter": "PLAY 间隔的总体方差。",
+    "explainable_ratio": "1 - order_violation_count / VLM_SCORE_SELECT_count。",
+    "max_wait_time": "VLM_SCORE_SELECT.wait 的最大值。",
+    "starvation_rate": "wait > 4s 的 VLM_SCORE_SELECT 占比。",
+    "vlm_play_rate": "PLAY(source=vlm) / PLAY(total)。",
+    "output_rate": "PLAY(total) / 观测总时长(sec)。",
+    "queue_size_distribution": "所有带 queue_size 字段的事件分布；当前通常来自 DROP_CANDIDATE。",
+    "drop_candidate_distribution": "DROP_CANDIDATE 的 semantic / queue_size / reason 分布。"
+  },
+  "metrics": {
+    "correctness": {
+      "warning_loss_rate": {
+        "value": 0.622642,
+        "numerator": 33,
+        "denominator": 53,
+        "computable": true,
+        "missing_reason": null
+      },
+      "user_focus_success_rate": {
+        "value": 1.0,
+        "numerator": 4,
+        "denominator": 4,
+        "computable": true,
+        "missing_reason": null
+      },
+      "deadlock_count": 3
+    },
+    "stability": {
+      "order_violation_count": 0,
+      "jitter": 20.325614,
+      "explainable_ratio": 1.0
+    },
+    "fairness": {
+      "max_wait_time": 4.0,
+      "starvation_rate": {
+        "value": 0.0,
+        "numerator": 0,
+        "denominator": 37,
+        "computable": true,
+        "missing_reason": null
+      },
+      "vlm_play_rate": {
+        "value": 0.574468,
+        "numerator": 27,
+        "denominator": 47,
+        "computable": true,
+        "missing_reason": null
+      }
+    },
+    "resource_behavior": {
+      "output_rate": 0.248021,
+      "queue_size_distribution": {
+        "samples": 71,
+        "distribution": {
+          "2": {
+            "count": 16,
+            "ratio": 0.225352
+          },
+          "3": {
+            "count": 55,
+            "ratio": 0.774648
+          }
+        },
+        "min": 2,
+        "max": 3,
+        "mean": 2.774648
+      },
+      "drop_candidate_distribution": {
+        "total": 71,
+        "semantic": {
+          "LOW": {
+            "count": 71,
+            "ratio": 1.0
+          }
+        },
+        "queue_size": {
+          "2": {
+            "count": 16,
+            "ratio": 0.225352
+          },
+          "3": {
+            "count": 55,
+            "ratio": 0.774648
+          }
+        },
+        "reason": {
+          "low_semantic_under_pressure": {
+            "count": 71,
+            "ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "windows": [
+    {
+      "index": 1,
+      "start_ts": 1800000000.0,
+      "end_ts": 1800000047.374998,
+      "duration_sec": 47.374998,
+      "play_count": 9,
+      "output_rate": 0.189974,
+      "vlm_play_rate": 0.666667,
+      "avg_wait": 2.884615,
+      "max_wait": 4.0,
+      "starvation_rate": 0.0,
+      "drop_candidate_count": 0
+    },
+    {
+      "index": 2,
+      "start_ts": 1800000047.374998,
+      "end_ts": 1800000094.749995,
+      "duration_sec": 47.374998,
+      "play_count": 7,
+      "output_rate": 0.147757,
+      "vlm_play_rate": 0.714286,
+      "avg_wait": 0.846154,
+      "max_wait": 2.5,
+      "starvation_rate": 0.0,
+      "drop_candidate_count": 7
+    },
+    {
+      "index": 3,
+      "start_ts": 1800000094.749995,
+      "end_ts": 1800000142.124993,
+      "duration_sec": 47.374998,
+      "play_count": 19,
+      "output_rate": 0.401055,
+      "vlm_play_rate": 0.473684,
+      "avg_wait": 2.5,
+      "max_wait": 2.5,
+      "starvation_rate": 0.0,
+      "drop_candidate_count": 48
+    },
+    {
+      "index": 4,
+      "start_ts": 1800000142.124993,
+      "end_ts": 1800000189.49999,
+      "duration_sec": 47.374998,
+      "play_count": 12,
+      "output_rate": 0.253298,
+      "vlm_play_rate": 0.583333,
+      "avg_wait": 1.75,
+      "max_wait": 2.5,
+      "starvation_rate": 0.0,
+      "drop_candidate_count": 16
+    }
+  ],
+  "anomalies": {
+    "deadlock_segments": [
+      {
+        "start_ts": 1800000000.0,
+        "end_ts": 1800000011.0,
+        "gap_sec": 11.0,
+        "reason": "no_play_gap_gt_10s"
+      },
+      {
+        "start_ts": 1800000039.0,
+        "end_ts": 1800000072.0,
+        "gap_sec": 33.0,
+        "reason": "no_play_gap_gt_10s"
+      },
+      {
+        "start_ts": 1800000171.0,
+        "end_ts": 1800000189.4999905,
+        "gap_sec": 18.49999,
+        "reason": "no_play_gap_gt_10s"
+      }
+    ],
+    "wait_anomalies": {
+      "high_wait_events": [],
+      "high_wait_segments": [],
+      "upward_wait_jumps": [
+        {
+          "from_id": "no-0024",
+          "to_id": "no-0027",
+          "from_ts": 1800000024.5,
+          "to_ts": 1800000031.0,
+          "from_wait": 1.5,
+          "to_wait": 4.0,
+          "delta_wait": 2.5
+        },
+        {
+          "from_id": "no-0042",
+          "to_id": "no-0042",
+          "from_ts": 1800000044.0,
+          "to_ts": 1800000047.0,
+          "from_wait": 1.0,
+          "to_wait": 4.0,
+          "delta_wait": 3.0
+        }
+      ]
+    }
+  },
+  "samples": {
+    "lost_warnings": [
+      {
+        "id": "st-0093",
+        "ts": 1800000089.9999993,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0112",
+        "ts": 1800000093.9999988,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0132",
+        "ts": 1800000097.999998,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0141",
+        "ts": 1800000099.9999979,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0161",
+        "ts": 1800000103.9999971,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0180",
+        "ts": 1800000107.9999964,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0190",
+        "ts": 1800000109.9999962,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0209",
+        "ts": 1800000113.9999955,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0228",
+        "ts": 1800000117.999995,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0238",
+        "ts": 1800000119.9999945,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0257",
+        "ts": 1800000123.999994,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0277",
+        "ts": 1800000127.9999933,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0286",
+        "ts": 1800000129.999993,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0306",
+        "ts": 1800000133.9999924,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0325",
+        "ts": 1800000137.9999917,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0344",
+        "ts": 1800000141.9999912,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0354",
+        "ts": 1800000143.9999907,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0371",
+        "ts": 1800000149.4999905,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0374",
+        "ts": 1800000150.4999905,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      },
+      {
+        "id": "st-0375",
+        "ts": 1800000150.9999905,
+        "source": "decision",
+        "priority": 1,
+        "event": "SUBMIT"
+      }
+    ],
+    "user_focus_results": [
+      {
+        "query_ts": 1800000010.0,
+        "success": true,
+        "first_valid_play_ts": 1800000011.0,
+        "play_id": "no-0011",
+        "play_source": "vlm"
+      },
+      {
+        "query_ts": 1800000071.0,
+        "success": true,
+        "first_valid_play_ts": 1800000072.0,
+        "play_id": "us-0068",
+        "play_source": "vlm"
+      },
+      {
+        "query_ts": 1800000076.0,
+        "success": true,
+        "first_valid_play_ts": 1800000077.0,
+        "play_id": "us-0070",
+        "play_source": "vlm"
+      },
+      {
+        "query_ts": 1800000081.0,
+        "success": true,
+        "first_valid_play_ts": 1800000082.0,
+        "play_id": "us-0072",
+        "play_source": "vlm"
+      }
+    ],
+    "order_violations": []
+  }
+}

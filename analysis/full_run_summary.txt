@@ -1,0 +1,45 @@
+调度系统客观评估摘要
+================================
+输入日志: logs\full_run.jsonl
+事件总数: 589  无效行: 0
+观测区间: 1800000000.000 -> 1800000189.500  (duration=189.500s)
+事件分布: {"DROP_CANDIDATE": 71, "PLAY": 47, "SCENARIO_END": 7, "SCENARIO_START": 7, "SUBMIT": 410, "USER_FOCUS_ENTER": 4, "USER_FOCUS_EXIT": 2, "VLM_SCORE_SELECT": 37, "user_input": 4}
+
+[1] Correctness
+- warning_loss_rate: 62.26% (分子/分母=33/53)
+- user_focus_success_rate: 100.00% (分子/分母=4/4)
+- deadlock_count: 3  判定规则: 连续 >10s 无 PLAY
+
+[2] Stability
+- order_violation_count: 0
+- jitter: 20.325614
+- explainable_ratio: 1.0000
+
+[3] Fairness
+- max_wait_time: 4.000s
+- starvation_rate: 0.00% (wait > 4s)
+- vlm_play_rate: 57.45%
+
+[4] Resource Behavior
+- output_rate: 0.248021 plays/s
+- queue_size_distribution: {"2": {"count": 16, "ratio": 0.225352}, "3": {"count": 55, "ratio": 0.774648}}
+- drop_candidate_distribution: {"total": 71, "semantic": {"LOW": {"count": 71, "ratio": 1.0}}, "queue_size": {"2": {"count": 16, "ratio": 0.225352}, "3": {"count": 55, "ratio": 0.774648}}, "reason": {"low_semantic_under_pressure": {"count": 71, "ratio": 1.0}}}
+
+[5] 异常片段
+- deadlock_segments: 3
+  1800000000.000 -> 1800000011.000, gap=11.000s
+  1800000039.000 -> 1800000072.000, gap=33.000s
+  1800000171.000 -> 1800000189.500, gap=18.500s
+- high_wait_segments: 0
+- upward_wait_jumps: 2
+
+[6] 窗口对比
+- W1 [1800000000.00, 1800000047.37] plays=9 output_rate=0.1900 avg_wait=2.885s starvation_rate=0.0000 drop_candidates=0
+- W2 [1800000047.37, 1800000094.75] plays=7 output_rate=0.1478 avg_wait=0.846s starvation_rate=0.0000 drop_candidates=7
+- W3 [1800000094.75, 1800000142.12] plays=19 output_rate=0.4011 avg_wait=2.500s starvation_rate=0.0000 drop_candidates=48
+- W4 [1800000142.12, 1800000189.50] plays=12 output_rate=0.2533 avg_wait=1.750s starvation_rate=0.0000 drop_candidates=16
+
+说明
+- 所有指标仅由日志字段直接计算，不使用随机数，也不补造缺失事件。
+- 某些指标若缺少必要事件或字段，会明确输出 N/A/null，而不是做主观推断。
+- 详细样本、违规例子、窗口数据见 analysis/report.json。

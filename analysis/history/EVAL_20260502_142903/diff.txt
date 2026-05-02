@@ -1,0 +1,24 @@
+avg_wait_play: 2.9 -> N/A
+avg_wait_queue: N/A -> 2.9
+avg_wait_select: 0.0 -> N/A
+avg_wait_time: 2.9 -> 2.9 (OK)
+deadlock_count: 0 -> 0 (OK)
+dropped: 71 -> 71 (OK)
+max_wait_play: 6.0 -> 6.0 (OK)
+max_wait_queue: N/A -> 6.0
+max_wait_select: 0 -> 0 (OK)
+max_wait_time: 6.0 -> 6.0 (OK)
+max_wait_total: 6.0 -> 6.0 (OK)
+model: N/A -> lazy_scheduling
+output_rate: 11.5 -> 11.5 (OK)
+played: 47 -> 47 (OK)
+queue_dominant: N/A -> True
+select_latency_meaningful: N/A -> False
+total_entries: 410 -> 410 (OK)
+vlm_play_rate: 29.3 -> 29.3 (OK)
+vlm_played: 27 -> 27 (OK)
+vlm_starved: 65 -> 65 (OK)
+vlm_total: 92 -> 92 (OK)
+wait_play_list: [0, 5.0, 3.5, 5.5, 4.0, 4.0, 0, 0, 0, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 1.0, 4.0, 4.5, 5.0, 5.5, 6.0] -> N/A
+wait_select_list: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] -> N/A
+warnings_dropped: 0 -> 0 (OK)

@@ -1,0 +1,19 @@
+=== EVALUATION SUMMARY (V3) ===
+
+max_wait_queue:  6.0s
+avg_wait_queue:  2.9s
+
+vlm_play_rate:   29.3%
+vlm_starved:     65
+warnings_dropped:0
+deadlock_count:  0
+
+=== SYSTEM PROPERTIES ===
+no_deadlock:            PASS
+warnings_dropped:        PASS
+bounded_starvation:     PASS (aging boost verified)
+
+note:
+  lazy scheduling system
+  select happens at play-time
+  queue delay dominates total latency

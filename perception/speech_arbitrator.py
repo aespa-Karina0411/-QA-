@@ -3,7 +3,7 @@
 
 import time
 from core.global_config import CONFIG
-from utils.trace_logger import TraceLogger
+from observe.trace_logger import TraceLogger
 
 _trace_logger = None
 
@@ -158,6 +158,7 @@ class SpeechArbitrator:
                 print(f"[TRACE][USER_FOCUS_OVERWRITE] id={tid}")
             self.vlm_reserved_pending = False
             print("[TRACE][SELECT]", f"id={item.get('trace_id','?')} source={item.get('source','?')} (reserved)")
+            self.trace.log("SELECT", id=item.get("trace_id"), ts=now, path="reserved")
             return item
 
         # Phase D Step 2: VLM 老化提升 — 超时 VLM 强制提升优先级
@@ -171,6 +172,7 @@ class SpeechArbitrator:
                 print("[TRACE][SELECT]", f"id={tid} source={qitem.get('source','?')} (aging)")
                 qitem["aging_boost"] = True
                 qitem["force_play"] = True
+                self.trace.log("SELECT", id=qitem.get("trace_id"), ts=now, path="aging")
                 return qitem
 
         item = None
@@ -226,6 +228,7 @@ class SpeechArbitrator:
                 tid = item.get("trace_id", "?")
                 src = item.get("source", "?")
                 print("[TRACE][SELECT]", f"id={tid} source={src}")
+                self.trace.log("SELECT", id=item.get("trace_id"), ts=time.time(), path="normal")
 
         return item
 
