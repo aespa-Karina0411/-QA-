@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# Generated data
+logs/*.jsonl
+logs/*.json
+run_log.json
+analysis/*.jsonl
+
+# Model files (too large for git)
+*.pt
+*.onnx
+models/piper/
+models/vosk/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+temp/
