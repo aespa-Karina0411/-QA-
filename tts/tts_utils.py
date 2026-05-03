@@ -16,10 +16,12 @@ try:
     pygame.mixer.init()
     PYGAME_AVAILABLE = True
     print("[TTS] 已启用 pygame 异步播放")
-except ImportError:
+except Exception as e:
     PYGAME_AVAILABLE = False
-    from playsound3 import playsound
-    print("[TTS] 警告: pygame 未安装，将使用 playsound 阻塞播放。")
+    print("[TTS] 警告: pygame 不可用, 将使用系统播放器。", e)
+
+from playsound3 import playsound
+from tts_local_utils import play_audio_file
 
 # ====================== 核心优化：重试逻辑 ======================
 
@@ -75,7 +77,11 @@ def _wait_and_delete(file_path, stop_event=None):
 def play_audio_async(file_path, interrupt=True):
     """异步播放音频文件"""
     if not PYGAME_AVAILABLE:
-        playsound(file_path)
+        try:
+            playsound(file_path)
+        except Exception as e:
+            print("[WARN] playsound failed:", e)
+            threading.Thread(target=play_audio_file, args=(file_path,), daemon=True).start()
         return True
 
     if interrupt:
@@ -132,13 +138,25 @@ def text_to_speech(text, api_key=None, voice=None, output_file=None, async_play=
             return play_audio_async(output_file)
         else:
             if PYGAME_AVAILABLE:
-                pygame.mixer.music.load(output_file)
-                pygame.mixer.music.play()
-                while pygame.mixer.music.get_busy():
-                    time.sleep(0.1)
-                pygame.mixer.music.unload()
+                try:
+                    pygame.mixer.music.load(output_file)
+                    pygame.mixer.music.play()
+                    start = time.time()
+                    while pygame.mixer.music.get_busy():
+                        if time.time() - start > 10:
+                            print("[WARN] pygame playback timeout")
+                            break
+                        time.sleep(0.05)
+                    pygame.mixer.music.unload()
+                except Exception as e:
+                    print("[WARN] pygame playback failed, falling back:", e)
+                    play_audio_file(output_file)
             else:
-                playsound(output_file)
+                try:
+                    playsound(output_file)
+                except Exception as e:
+                    print("[WARN] playsound failed:", e)
+                    play_audio_file(output_file)
             
             if auto_delete:
                 os.remove(output_file)

@@ -1,18 +1,647 @@
-{"ts": 1777648402.5194523, "event": "PLAY", "id": "496e87", "source": "startup", "priority": 0}
-{"ts": 1777648427.4593377, "event": "PLAY", "id": "69a9da", "source": "startup", "priority": 0}
-{"ts": 1777648764.2184687, "event": "PLAY", "id": "f0f28d", "source": "startup", "priority": 0}
-{"ts": 1777648782.9454794, "event": "PLAY", "id": "ff120c", "source": "decision", "priority": 1}
-{"ts": 1777648790.9556243, "event": "PLAY", "id": "d326d9", "source": "vlm", "priority": 2}
-{"ts": 1777700847.8381357, "event": "PLAY", "id": "b592b3", "source": "startup", "priority": 0}
-{"ts": 1777700859.434183, "event": "VLM_SCORE_SELECT", "id": "27fbb4", "wait": 0.03, "score": 10.0, "aging": false}
-{"ts": 1777700859.435099, "event": "PLAY", "id": "27fbb4", "source": "user_direct", "priority": 2}
-{"ts": 1777700865.4840684, "event": "PLAY", "id": "363b83", "source": "decision", "priority": 1}
-{"ts": 1777700871.0576184, "event": "PLAY", "id": "ab82a8", "source": "vlm", "priority": 2}
-{"ts": 1777700875.107354, "event": "PLAY", "id": "80505c", "source": "decision", "priority": 1}
-{"ts": 1777700889.456442, "event": "PLAY", "id": "ce6586", "source": "vlm", "priority": 2}
-{"ts": 1777700915.008565, "event": "VLM_SCORE_SELECT", "id": "b0986e", "wait": 0.04, "score": 10.0, "aging": false}
-{"ts": 1777700915.0097106, "event": "PLAY", "id": "b0986e", "source": "user_direct", "priority": 2}
-{"ts": 1777700922.0649848, "event": "VLM_SCORE_SELECT", "id": "f4b7e1", "wait": 0.03, "score": 10.0, "aging": false}
-{"ts": 1777700922.0657341, "event": "PLAY", "id": "f4b7e1", "source": "user_direct", "priority": 2}
-{"ts": 1777700929.9797835, "event": "PLAY", "id": "c045f2", "source": "decision", "priority": 1}
-{"ts": 1777700937.9760594, "event": "PLAY", "id": "066ed0", "source": "vlm", "priority": 2}
+{"ts": 1800000000.0, "event": "SCENARIO_START", "scenario": "warmup"}
+{"ts": 1800000000.0, "event": "SUBMIT", "id": "wa-0001", "source": "decision", "priority": 3}
+{"ts": 1800000001.0, "event": "SUBMIT", "id": "wa-0002", "source": "decision", "priority": 3}
+{"ts": 1800000002.0, "event": "SUBMIT", "id": "wa-0003", "source": "decision", "priority": 3}
+{"ts": 1800000003.0, "event": "SUBMIT", "id": "wa-0004", "source": "decision", "priority": 3}
+{"ts": 1800000004.0, "event": "SUBMIT", "id": "wa-0005", "source": "decision", "priority": 3}
+{"ts": 1800000005.0, "event": "SUBMIT", "id": "wa-0006", "source": "decision", "priority": 3}
+{"ts": 1800000006.0, "event": "SUBMIT", "id": "wa-0007", "source": "decision", "priority": 3}
+{"ts": 1800000007.0, "event": "SUBMIT", "id": "wa-0008", "source": "decision", "priority": 3}
+{"ts": 1800000008.0, "event": "SUBMIT", "id": "wa-0009", "source": "decision", "priority": 3}
+{"ts": 1800000009.0, "event": "SUBMIT", "id": "wa-0010", "source": "decision", "priority": 3}
+{"ts": 1800000010.0, "event": "SCENARIO_END", "scenario": "warmup"}
+{"ts": 1800000010.0, "event": "SCENARIO_START", "scenario": "normal"}
+{"ts": 1800000010.0, "event": "user_input", "scenario": "normal", "text": "帮我看看前面有什么"}
+{"ts": 1800000010.0, "event": "USER_FOCUS_ENTER", "scenario": "normal", "text": "帮我看看前面有什么"}
+{"ts": 1800000011.0, "event": "SUBMIT", "id": "no-0011", "source": "vlm", "priority": 2}
+{"ts": 1800000011.0, "event": "SELECT", "id": "no-0011", "path": "normal"}
+{"ts": 1800000011.0, "event": "PLAY", "id": "no-0011", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": true, "force_play": true, "aging_boost": false}
+{"ts": 1800000011.0, "event": "SUBMIT", "id": "no-0012", "source": "decision", "priority": 3}
+{"ts": 1800000011.0, "event": "SUBMIT", "id": "no-0013", "source": "vlm", "priority": 2}
+{"ts": 1800000012.5, "event": "SUBMIT", "id": "no-0014", "source": "decision", "priority": 1}
+{"ts": 1800000013.5, "event": "SELECT", "id": "no-0014", "path": "normal"}
+{"ts": 1800000013.5, "event": "PLAY", "id": "no-0014", "source": "decision", "priority": 1, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000014.0, "event": "SUBMIT", "id": "no-0015", "source": "decision", "priority": 3}
+{"ts": 1800000015.0, "event": "SUBMIT", "id": "no-0016", "source": "vlm", "priority": 2}
+{"ts": 1800000015.5, "event": "USER_FOCUS_EXIT", "scenario": "normal"}
+{"ts": 1800000015.5, "event": "SUBMIT", "id": "no-0017", "source": "decision", "priority": 3}
+{"ts": 1800000016.0, "event": "SELECT", "id": "no-0013", "path": "aging"}
+{"ts": 1800000016.0, "event": "PLAY", "id": "no-0013", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000017.0, "event": "SUBMIT", "id": "no-0018", "source": "decision", "priority": 3}
+{"ts": 1800000018.5, "event": "VLM_SCORE_SELECT", "id": "no-0016", "wait": 3.5, "score": 45.0, "aging": false}
+{"ts": 1800000018.5, "event": "SELECT", "id": "no-0016", "path": "normal"}
+{"ts": 1800000018.5, "event": "PLAY", "id": "no-0016", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000018.5, "event": "SUBMIT", "id": "no-0019", "source": "decision", "priority": 3}
+{"ts": 1800000019.0, "event": "SUBMIT", "id": "no-0020", "source": "vlm", "priority": 2}
+{"ts": 1800000020.0, "event": "SUBMIT", "id": "no-0021", "source": "decision", "priority": 3}
+{"ts": 1800000021.5, "event": "VLM_SCORE_SELECT", "id": "no-0020", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000021.5, "event": "SUBMIT", "id": "no-0022", "source": "decision", "priority": 3}
+{"ts": 1800000023.0, "event": "SUBMIT", "id": "no-0023", "source": "decision", "priority": 3}
+{"ts": 1800000023.0, "event": "VLM_SCORE_SELECT", "id": "no-0020", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000023.0, "event": "SUBMIT", "id": "no-0024", "source": "vlm", "priority": 2}
+{"ts": 1800000024.5, "event": "SUBMIT", "id": "no-0025", "source": "decision", "priority": 3}
+{"ts": 1800000024.5, "event": "VLM_SCORE_SELECT", "id": "no-0024", "wait": 1.5, "score": 25.0, "aging": false}
+{"ts": 1800000026.0, "event": "SUBMIT", "id": "no-0026", "source": "decision", "priority": 1}
+{"ts": 1800000026.0, "event": "SELECT", "id": "no-0026", "path": "normal"}
+{"ts": 1800000026.0, "event": "PLAY", "id": "no-0026", "source": "decision", "priority": 1, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000027.0, "event": "SUBMIT", "id": "no-0027", "source": "vlm", "priority": 2}
+{"ts": 1800000027.5, "event": "SUBMIT", "id": "no-0028", "source": "decision", "priority": 3}
+{"ts": 1800000028.5, "event": "SELECT", "id": "no-0024", "path": "aging"}
+{"ts": 1800000028.5, "event": "PLAY", "id": "no-0024", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000029.0, "event": "SUBMIT", "id": "no-0029", "source": "decision", "priority": 3}
+{"ts": 1800000030.5, "event": "SUBMIT", "id": "no-0030", "source": "decision", "priority": 3}
+{"ts": 1800000031.0, "event": "VLM_SCORE_SELECT", "id": "no-0027", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000031.0, "event": "SELECT", "id": "no-0027", "path": "normal"}
+{"ts": 1800000031.0, "event": "PLAY", "id": "no-0027", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000031.0, "event": "SUBMIT", "id": "no-0031", "source": "vlm", "priority": 2}
+{"ts": 1800000032.0, "event": "SUBMIT", "id": "no-0032", "source": "decision", "priority": 3}
+{"ts": 1800000033.5, "event": "VLM_SCORE_SELECT", "id": "no-0031", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000033.5, "event": "SUBMIT", "id": "no-0033", "source": "decision", "priority": 3}
+{"ts": 1800000035.0, "event": "SUBMIT", "id": "no-0034", "source": "decision", "priority": 3}
+{"ts": 1800000035.0, "event": "VLM_SCORE_SELECT", "id": "no-0031", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000035.0, "event": "SUBMIT", "id": "no-0035", "source": "vlm", "priority": 2}
+{"ts": 1800000036.5, "event": "SUBMIT", "id": "no-0036", "source": "decision", "priority": 1}
+{"ts": 1800000036.5, "event": "SELECT", "id": "no-0036", "path": "normal"}
+{"ts": 1800000036.5, "event": "PLAY", "id": "no-0036", "source": "decision", "priority": 1, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000038.0, "event": "SUBMIT", "id": "no-0037", "source": "decision", "priority": 3}
+{"ts": 1800000039.0, "event": "VLM_SCORE_SELECT", "id": "no-0035", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000039.0, "event": "SELECT", "id": "no-0035", "path": "normal"}
+{"ts": 1800000039.0, "event": "PLAY", "id": "no-0035", "source": "vlm", "priority": 2, "scenario": "normal", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000039.0, "event": "SUBMIT", "id": "no-0038", "source": "vlm", "priority": 2}
+{"ts": 1800000039.5, "event": "SUBMIT", "id": "no-0039", "source": "decision", "priority": 3}
+{"ts": 1800000041.0, "event": "SUBMIT", "id": "no-0040", "source": "decision", "priority": 3}
+{"ts": 1800000041.5, "event": "VLM_SCORE_SELECT", "id": "no-0038", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000042.5, "event": "SUBMIT", "id": "no-0041", "source": "decision", "priority": 3}
+{"ts": 1800000043.0, "event": "VLM_SCORE_SELECT", "id": "no-0038", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000043.0, "event": "SUBMIT", "id": "no-0042", "source": "vlm", "priority": 2}
+{"ts": 1800000044.0, "event": "SUBMIT", "id": "no-0043", "source": "decision", "priority": 3}
+{"ts": 1800000044.0, "event": "VLM_SCORE_SELECT", "id": "no-0042", "wait": 1.0, "score": 20.0, "aging": false}
+{"ts": 1800000045.5, "event": "SUBMIT", "id": "no-0044", "source": "decision", "priority": 3}
+{"ts": 1800000047.0, "event": "VLM_SCORE_SELECT", "id": "no-0042", "wait": 4.0, "score": 50.0, "aging": false}
+{"ts": 1800000047.0, "event": "SUBMIT", "id": "no-0045", "source": "decision", "priority": 3}
+{"ts": 1800000047.0, "event": "SUBMIT", "id": "no-0046", "source": "vlm", "priority": 2}
+{"ts": 1800000047.0, "event": "VLM_SCORE_SELECT", "id": "no-0046", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000048.5, "event": "VLM_SCORE_SELECT", "id": "no-0046", "wait": 1.5, "score": 25.0, "aging": false}
+{"ts": 1800000048.5, "event": "SUBMIT", "id": "no-0047", "source": "decision", "priority": 3}
+{"ts": 1800000050.0, "event": "SUBMIT", "id": "no-0048", "source": "decision", "priority": 3}
+{"ts": 1800000051.0, "event": "SUBMIT", "id": "no-0049", "source": "vlm", "priority": 2}
+{"ts": 1800000051.0, "event": "VLM_SCORE_SELECT", "id": "no-0049", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000051.5, "event": "VLM_SCORE_SELECT", "id": "no-0049", "wait": 0.5, "score": 15.0, "aging": false}
+{"ts": 1800000051.5, "event": "SUBMIT", "id": "no-0050", "source": "decision", "priority": 3}
+{"ts": 1800000053.0, "event": "SUBMIT", "id": "no-0051", "source": "decision", "priority": 3}
+{"ts": 1800000054.5, "event": "SUBMIT", "id": "no-0052", "source": "decision", "priority": 3}
+{"ts": 1800000055.0, "event": "SUBMIT", "id": "no-0053", "source": "vlm", "priority": 2}
+{"ts": 1800000055.0, "event": "VLM_SCORE_SELECT", "id": "no-0053", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000056.0, "event": "VLM_SCORE_SELECT", "id": "no-0053", "wait": 1.0, "score": 20.0, "aging": false}
+{"ts": 1800000056.0, "event": "SUBMIT", "id": "no-0054", "source": "decision", "priority": 3}
+{"ts": 1800000057.5, "event": "SUBMIT", "id": "no-0055", "source": "decision", "priority": 3}
+{"ts": 1800000059.0, "event": "SUBMIT", "id": "no-0056", "source": "decision", "priority": 3}
+{"ts": 1800000059.0, "event": "SUBMIT", "id": "no-0057", "source": "vlm", "priority": 2}
+{"ts": 1800000059.0, "event": "VLM_SCORE_SELECT", "id": "no-0057", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000060.5, "event": "VLM_SCORE_SELECT", "id": "no-0057", "wait": 1.5, "score": 25.0, "aging": false}
+{"ts": 1800000060.5, "event": "SUBMIT", "id": "no-0058", "source": "decision", "priority": 3}
+{"ts": 1800000062.0, "event": "SUBMIT", "id": "no-0059", "source": "decision", "priority": 3}
+{"ts": 1800000063.0, "event": "SUBMIT", "id": "no-0060", "source": "vlm", "priority": 2}
+{"ts": 1800000063.0, "event": "VLM_SCORE_SELECT", "id": "no-0060", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000063.5, "event": "VLM_SCORE_SELECT", "id": "no-0060", "wait": 0.5, "score": 15.0, "aging": false}
+{"ts": 1800000063.5, "event": "SUBMIT", "id": "no-0061", "source": "decision", "priority": 3}
+{"ts": 1800000065.0, "event": "SUBMIT", "id": "no-0062", "source": "decision", "priority": 3}
+{"ts": 1800000066.5, "event": "SUBMIT", "id": "no-0063", "source": "decision", "priority": 3}
+{"ts": 1800000067.0, "event": "SUBMIT", "id": "no-0064", "source": "vlm", "priority": 2}
+{"ts": 1800000067.0, "event": "VLM_SCORE_SELECT", "id": "no-0064", "wait": 0.0, "score": 10.0, "aging": false}
+{"ts": 1800000068.0, "event": "VLM_SCORE_SELECT", "id": "no-0064", "wait": 1.0, "score": 20.0, "aging": false}
+{"ts": 1800000068.0, "event": "SUBMIT", "id": "no-0065", "source": "decision", "priority": 3}
+{"ts": 1800000069.5, "event": "SUBMIT", "id": "no-0066", "source": "decision", "priority": 3}
+{"ts": 1800000071.0, "event": "SCENARIO_END", "scenario": "normal"}
+{"ts": 1800000071.0, "event": "SCENARIO_START", "scenario": "user_focus"}
+{"ts": 1800000071.0, "event": "user_input", "scenario": "user_focus", "text": "帮我看看前面有什么"}
+{"ts": 1800000071.0, "event": "USER_FOCUS_ENTER", "scenario": "user_focus", "text": "帮我看看前面有什么"}
+{"ts": 1800000071.3, "event": "SUBMIT", "id": "us-0067", "source": "decision", "priority": 3}
+{"ts": 1800000072.0, "event": "SUBMIT", "id": "us-0068", "source": "vlm", "priority": 2}
+{"ts": 1800000072.0, "event": "SELECT", "id": "us-0068", "path": "normal"}
+{"ts": 1800000072.0, "event": "PLAY", "id": "us-0068", "source": "vlm", "priority": 2, "scenario": "user_focus", "user_focus": true, "force_play": true, "aging_boost": false}
+{"ts": 1800000076.0, "event": "user_input", "scenario": "user_focus", "text": "右边安全吗"}
+{"ts": 1800000076.0, "event": "USER_FOCUS_ENTER", "scenario": "user_focus", "text": "右边安全吗"}
+{"ts": 1800000076.3, "event": "SUBMIT", "id": "us-0069", "source": "decision", "priority": 3}
+{"ts": 1800000077.0, "event": "SUBMIT", "id": "us-0070", "source": "vlm", "priority": 2}
+{"ts": 1800000077.0, "event": "SELECT", "id": "us-0070", "path": "normal"}
+{"ts": 1800000077.0, "event": "PLAY", "id": "us-0070", "source": "vlm", "priority": 2, "scenario": "user_focus", "user_focus": true, "force_play": true, "aging_boost": false}
+{"ts": 1800000081.0, "event": "user_input", "scenario": "user_focus", "text": "能描述一下环境吗"}
+{"ts": 1800000081.0, "event": "USER_FOCUS_ENTER", "scenario": "user_focus", "text": "能描述一下环境吗"}
+{"ts": 1800000081.3, "event": "SUBMIT", "id": "us-0071", "source": "decision", "priority": 3}
+{"ts": 1800000082.0, "event": "SUBMIT", "id": "us-0072", "source": "vlm", "priority": 2}
+{"ts": 1800000082.0, "event": "SELECT", "id": "us-0072", "path": "normal"}
+{"ts": 1800000082.0, "event": "PLAY", "id": "us-0072", "source": "vlm", "priority": 2, "scenario": "user_focus", "user_focus": true, "force_play": true, "aging_boost": false}
+{"ts": 1800000086.0, "event": "SCENARIO_END", "scenario": "user_focus"}
+{"ts": 1800000086.0, "event": "SCENARIO_START", "scenario": "stress"}
+{"ts": 1800000086.0, "event": "SUBMIT", "id": "st-0073", "source": "decision", "priority": 3}
+{"ts": 1800000086.0, "event": "SUBMIT", "id": "st-0074", "source": "decision", "priority": 1}
+{"ts": 1800000086.0, "event": "SELECT", "id": "st-0074", "path": "normal"}
+{"ts": 1800000086.0, "event": "PLAY", "id": "st-0074", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000086.0, "event": "SUBMIT", "id": "st-0075", "source": "vlm", "priority": 2}
+{"ts": 1800000086.3, "event": "USER_FOCUS_EXIT", "scenario": "stress"}
+{"ts": 1800000086.3, "event": "SUBMIT", "id": "st-0076", "source": "decision", "priority": 3}
+{"ts": 1800000086.6, "event": "SUBMIT", "id": "st-0077", "source": "decision", "priority": 3}
+{"ts": 1800000086.8999999, "event": "SUBMIT", "id": "st-0078", "source": "decision", "priority": 3}
+{"ts": 1800000086.9999998, "event": "SUBMIT", "id": "st-0079", "source": "vlm", "priority": 2}
+{"ts": 1800000087.1999998, "event": "SUBMIT", "id": "st-0080", "source": "decision", "priority": 3}
+{"ts": 1800000087.4999998, "event": "SUBMIT", "id": "st-0081", "source": "decision", "priority": 3}
+{"ts": 1800000087.7999997, "event": "SUBMIT", "id": "st-0082", "source": "decision", "priority": 3}
+{"ts": 1800000087.9999998, "event": "SUBMIT", "id": "st-0083", "source": "decision", "priority": 1}
+{"ts": 1800000087.9999998, "event": "SUBMIT", "id": "st-0084", "source": "vlm", "priority": 2}
+{"ts": 1800000087.9999998, "event": "DROP_CANDIDATE", "id": "st-0084", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000088.0999997, "event": "SUBMIT", "id": "st-0085", "source": "decision", "priority": 3}
+{"ts": 1800000088.3999996, "event": "SUBMIT", "id": "st-0086", "source": "decision", "priority": 3}
+{"ts": 1800000088.5, "event": "VLM_SCORE_SELECT", "id": "st-0075", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000088.5, "event": "SELECT", "id": "st-0075", "path": "normal"}
+{"ts": 1800000088.5, "event": "PLAY", "id": "st-0075", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000088.6999996, "event": "SUBMIT", "id": "st-0087", "source": "decision", "priority": 3}
+{"ts": 1800000088.9999995, "event": "SUBMIT", "id": "st-0088", "source": "decision", "priority": 3}
+{"ts": 1800000088.9999995, "event": "SUBMIT", "id": "st-0089", "source": "vlm", "priority": 2}
+{"ts": 1800000088.9999995, "event": "DROP_CANDIDATE", "id": "st-0089", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000089.2999995, "event": "SUBMIT", "id": "st-0090", "source": "decision", "priority": 3}
+{"ts": 1800000089.5999994, "event": "SUBMIT", "id": "st-0091", "source": "decision", "priority": 3}
+{"ts": 1800000089.8999994, "event": "SUBMIT", "id": "st-0092", "source": "decision", "priority": 3}
+{"ts": 1800000089.9999993, "event": "SUBMIT", "id": "st-0093", "source": "decision", "priority": 1}
+{"ts": 1800000089.9999993, "event": "SUBMIT", "id": "st-0094", "source": "vlm", "priority": 2}
+{"ts": 1800000089.9999993, "event": "DROP_CANDIDATE", "id": "st-0094", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000090.1999993, "event": "SUBMIT", "id": "st-0095", "source": "decision", "priority": 3}
+{"ts": 1800000090.4999993, "event": "SUBMIT", "id": "st-0096", "source": "decision", "priority": 3}
+{"ts": 1800000090.7999992, "event": "SUBMIT", "id": "st-0097", "source": "decision", "priority": 3}
+{"ts": 1800000090.9999993, "event": "SUBMIT", "id": "st-0098", "source": "vlm", "priority": 2}
+{"ts": 1800000090.9999993, "event": "DROP_CANDIDATE", "id": "st-0098", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000091.0, "event": "SELECT", "id": "st-0083", "path": "normal"}
+{"ts": 1800000091.0, "event": "PLAY", "id": "st-0083", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000091.0999992, "event": "SUBMIT", "id": "st-0099", "source": "decision", "priority": 3}
+{"ts": 1800000091.3999991, "event": "SUBMIT", "id": "st-0100", "source": "decision", "priority": 3}
+{"ts": 1800000091.699999, "event": "SUBMIT", "id": "st-0101", "source": "decision", "priority": 3}
+{"ts": 1800000091.999999, "event": "SUBMIT", "id": "st-0102", "source": "decision", "priority": 3}
+{"ts": 1800000091.999999, "event": "SUBMIT", "id": "st-0103", "source": "decision", "priority": 1}
+{"ts": 1800000091.999999, "event": "SUBMIT", "id": "st-0104", "source": "vlm", "priority": 2}
+{"ts": 1800000091.999999, "event": "DROP_CANDIDATE", "id": "st-0104", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000092.299999, "event": "SUBMIT", "id": "st-0105", "source": "decision", "priority": 3}
+{"ts": 1800000092.599999, "event": "SUBMIT", "id": "st-0106", "source": "decision", "priority": 3}
+{"ts": 1800000092.899999, "event": "SUBMIT", "id": "st-0107", "source": "decision", "priority": 3}
+{"ts": 1800000092.9999988, "event": "SUBMIT", "id": "st-0108", "source": "vlm", "priority": 2}
+{"ts": 1800000092.9999988, "event": "DROP_CANDIDATE", "id": "st-0108", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000093.1999989, "event": "SUBMIT", "id": "st-0109", "source": "decision", "priority": 3}
+{"ts": 1800000093.4999988, "event": "SUBMIT", "id": "st-0110", "source": "decision", "priority": 3}
+{"ts": 1800000093.5, "event": "VLM_SCORE_SELECT", "id": "st-0098", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000093.5, "event": "SELECT", "id": "st-0098", "path": "normal"}
+{"ts": 1800000093.5, "event": "PLAY", "id": "st-0098", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000093.7999988, "event": "SUBMIT", "id": "st-0111", "source": "decision", "priority": 3}
+{"ts": 1800000093.9999988, "event": "SUBMIT", "id": "st-0112", "source": "decision", "priority": 1}
+{"ts": 1800000093.9999988, "event": "SUBMIT", "id": "st-0113", "source": "vlm", "priority": 2}
+{"ts": 1800000093.9999988, "event": "DROP_CANDIDATE", "id": "st-0113", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000094.0999987, "event": "SUBMIT", "id": "st-0114", "source": "decision", "priority": 3}
+{"ts": 1800000094.3999987, "event": "SUBMIT", "id": "st-0115", "source": "decision", "priority": 3}
+{"ts": 1800000094.6999986, "event": "SUBMIT", "id": "st-0116", "source": "decision", "priority": 3}
+{"ts": 1800000094.9999986, "event": "SUBMIT", "id": "st-0117", "source": "decision", "priority": 3}
+{"ts": 1800000094.9999986, "event": "SUBMIT", "id": "st-0118", "source": "vlm", "priority": 2}
+{"ts": 1800000094.9999986, "event": "DROP_CANDIDATE", "id": "st-0118", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000095.2999985, "event": "SUBMIT", "id": "st-0119", "source": "decision", "priority": 3}
+{"ts": 1800000095.5999985, "event": "SUBMIT", "id": "st-0120", "source": "decision", "priority": 3}
+{"ts": 1800000095.8999984, "event": "SUBMIT", "id": "st-0121", "source": "decision", "priority": 3}
+{"ts": 1800000095.9999983, "event": "SUBMIT", "id": "st-0122", "source": "decision", "priority": 1}
+{"ts": 1800000095.9999983, "event": "SUBMIT", "id": "st-0123", "source": "vlm", "priority": 2}
+{"ts": 1800000095.9999983, "event": "DROP_CANDIDATE", "id": "st-0123", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000096.0, "event": "SELECT", "id": "st-0103", "path": "normal"}
+{"ts": 1800000096.0, "event": "PLAY", "id": "st-0103", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000096.1999984, "event": "SUBMIT", "id": "st-0124", "source": "decision", "priority": 3}
+{"ts": 1800000096.4999983, "event": "SUBMIT", "id": "st-0125", "source": "decision", "priority": 3}
+{"ts": 1800000096.7999983, "event": "SUBMIT", "id": "st-0126", "source": "decision", "priority": 3}
+{"ts": 1800000096.9999983, "event": "SUBMIT", "id": "st-0127", "source": "vlm", "priority": 2}
+{"ts": 1800000096.9999983, "event": "DROP_CANDIDATE", "id": "st-0127", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000097.0999982, "event": "SUBMIT", "id": "st-0128", "source": "decision", "priority": 3}
+{"ts": 1800000097.3999982, "event": "SUBMIT", "id": "st-0129", "source": "decision", "priority": 3}
+{"ts": 1800000097.6999981, "event": "SUBMIT", "id": "st-0130", "source": "decision", "priority": 3}
+{"ts": 1800000097.999998, "event": "SUBMIT", "id": "st-0131", "source": "decision", "priority": 3}
+{"ts": 1800000097.999998, "event": "SUBMIT", "id": "st-0132", "source": "decision", "priority": 1}
+{"ts": 1800000097.999998, "event": "SUBMIT", "id": "st-0133", "source": "vlm", "priority": 2}
+{"ts": 1800000097.999998, "event": "DROP_CANDIDATE", "id": "st-0133", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000098.299998, "event": "SUBMIT", "id": "st-0134", "source": "decision", "priority": 3}
+{"ts": 1800000098.5, "event": "VLM_SCORE_SELECT", "id": "st-0123", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000098.5, "event": "SELECT", "id": "st-0123", "path": "normal"}
+{"ts": 1800000098.5, "event": "PLAY", "id": "st-0123", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000098.599998, "event": "SUBMIT", "id": "st-0135", "source": "decision", "priority": 3}
+{"ts": 1800000098.899998, "event": "SUBMIT", "id": "st-0136", "source": "decision", "priority": 3}
+{"ts": 1800000098.9999979, "event": "SUBMIT", "id": "st-0137", "source": "vlm", "priority": 2}
+{"ts": 1800000098.9999979, "event": "DROP_CANDIDATE", "id": "st-0137", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000099.199998, "event": "SUBMIT", "id": "st-0138", "source": "decision", "priority": 3}
+{"ts": 1800000099.4999979, "event": "SUBMIT", "id": "st-0139", "source": "decision", "priority": 3}
+{"ts": 1800000099.7999978, "event": "SUBMIT", "id": "st-0140", "source": "decision", "priority": 3}
+{"ts": 1800000099.9999979, "event": "SUBMIT", "id": "st-0141", "source": "decision", "priority": 1}
+{"ts": 1800000099.9999979, "event": "SUBMIT", "id": "st-0142", "source": "vlm", "priority": 2}
+{"ts": 1800000099.9999979, "event": "DROP_CANDIDATE", "id": "st-0142", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000100.0999978, "event": "SUBMIT", "id": "st-0143", "source": "decision", "priority": 3}
+{"ts": 1800000100.3999977, "event": "SUBMIT", "id": "st-0144", "source": "decision", "priority": 3}
+{"ts": 1800000100.6999977, "event": "SUBMIT", "id": "st-0145", "source": "decision", "priority": 3}
+{"ts": 1800000100.9999976, "event": "SUBMIT", "id": "st-0146", "source": "decision", "priority": 3}
+{"ts": 1800000100.9999976, "event": "SUBMIT", "id": "st-0147", "source": "vlm", "priority": 2}
+{"ts": 1800000100.9999976, "event": "DROP_CANDIDATE", "id": "st-0147", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000101.0, "event": "SELECT", "id": "st-0122", "path": "normal"}
+{"ts": 1800000101.0, "event": "PLAY", "id": "st-0122", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000101.2999976, "event": "SUBMIT", "id": "st-0148", "source": "decision", "priority": 3}
+{"ts": 1800000101.5999975, "event": "SUBMIT", "id": "st-0149", "source": "decision", "priority": 3}
+{"ts": 1800000101.8999975, "event": "SUBMIT", "id": "st-0150", "source": "decision", "priority": 3}
+{"ts": 1800000101.9999974, "event": "SUBMIT", "id": "st-0151", "source": "decision", "priority": 1}
+{"ts": 1800000101.9999974, "event": "SUBMIT", "id": "st-0152", "source": "vlm", "priority": 2}
+{"ts": 1800000101.9999974, "event": "DROP_CANDIDATE", "id": "st-0152", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000102.1999974, "event": "SUBMIT", "id": "st-0153", "source": "decision", "priority": 3}
+{"ts": 1800000102.4999974, "event": "SUBMIT", "id": "st-0154", "source": "decision", "priority": 3}
+{"ts": 1800000102.7999973, "event": "SUBMIT", "id": "st-0155", "source": "decision", "priority": 3}
+{"ts": 1800000102.9999974, "event": "SUBMIT", "id": "st-0156", "source": "vlm", "priority": 2}
+{"ts": 1800000102.9999974, "event": "DROP_CANDIDATE", "id": "st-0156", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000103.0999973, "event": "SUBMIT", "id": "st-0157", "source": "decision", "priority": 3}
+{"ts": 1800000103.3999972, "event": "SUBMIT", "id": "st-0158", "source": "decision", "priority": 3}
+{"ts": 1800000103.5, "event": "VLM_SCORE_SELECT", "id": "st-0147", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000103.5, "event": "SELECT", "id": "st-0147", "path": "normal"}
+{"ts": 1800000103.5, "event": "PLAY", "id": "st-0147", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000103.6999972, "event": "SUBMIT", "id": "st-0159", "source": "decision", "priority": 3}
+{"ts": 1800000103.9999971, "event": "SUBMIT", "id": "st-0160", "source": "decision", "priority": 3}
+{"ts": 1800000103.9999971, "event": "SUBMIT", "id": "st-0161", "source": "decision", "priority": 1}
+{"ts": 1800000103.9999971, "event": "SUBMIT", "id": "st-0162", "source": "vlm", "priority": 2}
+{"ts": 1800000103.9999971, "event": "DROP_CANDIDATE", "id": "st-0162", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000104.299997, "event": "SUBMIT", "id": "st-0163", "source": "decision", "priority": 3}
+{"ts": 1800000104.599997, "event": "SUBMIT", "id": "st-0164", "source": "decision", "priority": 3}
+{"ts": 1800000104.899997, "event": "SUBMIT", "id": "st-0165", "source": "decision", "priority": 3}
+{"ts": 1800000104.999997, "event": "SUBMIT", "id": "st-0166", "source": "vlm", "priority": 2}
+{"ts": 1800000104.999997, "event": "DROP_CANDIDATE", "id": "st-0166", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000105.199997, "event": "SUBMIT", "id": "st-0167", "source": "decision", "priority": 3}
+{"ts": 1800000105.499997, "event": "SUBMIT", "id": "st-0168", "source": "decision", "priority": 3}
+{"ts": 1800000105.7999969, "event": "SUBMIT", "id": "st-0169", "source": "decision", "priority": 3}
+{"ts": 1800000105.999997, "event": "SUBMIT", "id": "st-0170", "source": "decision", "priority": 1}
+{"ts": 1800000105.999997, "event": "SUBMIT", "id": "st-0171", "source": "vlm", "priority": 2}
+{"ts": 1800000105.999997, "event": "DROP_CANDIDATE", "id": "st-0171", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000106.0, "event": "SELECT", "id": "st-0151", "path": "normal"}
+{"ts": 1800000106.0, "event": "PLAY", "id": "st-0151", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000106.0999968, "event": "SUBMIT", "id": "st-0172", "source": "decision", "priority": 3}
+{"ts": 1800000106.3999968, "event": "SUBMIT", "id": "st-0173", "source": "decision", "priority": 3}
+{"ts": 1800000106.6999967, "event": "SUBMIT", "id": "st-0174", "source": "decision", "priority": 3}
+{"ts": 1800000106.9999967, "event": "SUBMIT", "id": "st-0175", "source": "decision", "priority": 3}
+{"ts": 1800000106.9999967, "event": "SUBMIT", "id": "st-0176", "source": "vlm", "priority": 2}
+{"ts": 1800000106.9999967, "event": "DROP_CANDIDATE", "id": "st-0176", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000107.2999966, "event": "SUBMIT", "id": "st-0177", "source": "decision", "priority": 3}
+{"ts": 1800000107.5999966, "event": "SUBMIT", "id": "st-0178", "source": "decision", "priority": 3}
+{"ts": 1800000107.8999965, "event": "SUBMIT", "id": "st-0179", "source": "decision", "priority": 3}
+{"ts": 1800000107.9999964, "event": "SUBMIT", "id": "st-0180", "source": "decision", "priority": 1}
+{"ts": 1800000107.9999964, "event": "SUBMIT", "id": "st-0181", "source": "vlm", "priority": 2}
+{"ts": 1800000107.9999964, "event": "DROP_CANDIDATE", "id": "st-0181", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000108.1999965, "event": "SUBMIT", "id": "st-0182", "source": "decision", "priority": 3}
+{"ts": 1800000108.4999964, "event": "SUBMIT", "id": "st-0183", "source": "decision", "priority": 3}
+{"ts": 1800000108.5, "event": "VLM_SCORE_SELECT", "id": "st-0171", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000108.5, "event": "SELECT", "id": "st-0171", "path": "normal"}
+{"ts": 1800000108.5, "event": "PLAY", "id": "st-0171", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000108.7999964, "event": "SUBMIT", "id": "st-0184", "source": "decision", "priority": 3}
+{"ts": 1800000108.9999964, "event": "SUBMIT", "id": "st-0185", "source": "vlm", "priority": 2}
+{"ts": 1800000108.9999964, "event": "DROP_CANDIDATE", "id": "st-0185", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000109.0999963, "event": "SUBMIT", "id": "st-0186", "source": "decision", "priority": 3}
+{"ts": 1800000109.3999963, "event": "SUBMIT", "id": "st-0187", "source": "decision", "priority": 3}
+{"ts": 1800000109.6999962, "event": "SUBMIT", "id": "st-0188", "source": "decision", "priority": 3}
+{"ts": 1800000109.9999962, "event": "SUBMIT", "id": "st-0189", "source": "decision", "priority": 3}
+{"ts": 1800000109.9999962, "event": "SUBMIT", "id": "st-0190", "source": "decision", "priority": 1}
+{"ts": 1800000109.9999962, "event": "SUBMIT", "id": "st-0191", "source": "vlm", "priority": 2}
+{"ts": 1800000109.9999962, "event": "DROP_CANDIDATE", "id": "st-0191", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000110.2999961, "event": "SUBMIT", "id": "st-0192", "source": "decision", "priority": 3}
+{"ts": 1800000110.599996, "event": "SUBMIT", "id": "st-0193", "source": "decision", "priority": 3}
+{"ts": 1800000110.899996, "event": "SUBMIT", "id": "st-0194", "source": "decision", "priority": 3}
+{"ts": 1800000110.999996, "event": "SUBMIT", "id": "st-0195", "source": "vlm", "priority": 2}
+{"ts": 1800000110.999996, "event": "DROP_CANDIDATE", "id": "st-0195", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000111.0, "event": "SELECT", "id": "st-0170", "path": "normal"}
+{"ts": 1800000111.0, "event": "PLAY", "id": "st-0170", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000111.199996, "event": "SUBMIT", "id": "st-0196", "source": "decision", "priority": 3}
+{"ts": 1800000111.499996, "event": "SUBMIT", "id": "st-0197", "source": "decision", "priority": 3}
+{"ts": 1800000111.799996, "event": "SUBMIT", "id": "st-0198", "source": "decision", "priority": 3}
+{"ts": 1800000111.999996, "event": "SUBMIT", "id": "st-0199", "source": "decision", "priority": 1}
+{"ts": 1800000111.999996, "event": "SUBMIT", "id": "st-0200", "source": "vlm", "priority": 2}
+{"ts": 1800000111.999996, "event": "DROP_CANDIDATE", "id": "st-0200", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000112.0999959, "event": "SUBMIT", "id": "st-0201", "source": "decision", "priority": 3}
+{"ts": 1800000112.3999958, "event": "SUBMIT", "id": "st-0202", "source": "decision", "priority": 3}
+{"ts": 1800000112.6999958, "event": "SUBMIT", "id": "st-0203", "source": "decision", "priority": 3}
+{"ts": 1800000112.9999957, "event": "SUBMIT", "id": "st-0204", "source": "decision", "priority": 3}
+{"ts": 1800000112.9999957, "event": "SUBMIT", "id": "st-0205", "source": "vlm", "priority": 2}
+{"ts": 1800000112.9999957, "event": "DROP_CANDIDATE", "id": "st-0205", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000113.2999957, "event": "SUBMIT", "id": "st-0206", "source": "decision", "priority": 3}
+{"ts": 1800000113.5, "event": "VLM_SCORE_SELECT", "id": "st-0195", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000113.5, "event": "SELECT", "id": "st-0195", "path": "normal"}
+{"ts": 1800000113.5, "event": "PLAY", "id": "st-0195", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000113.5999956, "event": "SUBMIT", "id": "st-0207", "source": "decision", "priority": 3}
+{"ts": 1800000113.8999956, "event": "SUBMIT", "id": "st-0208", "source": "decision", "priority": 3}
+{"ts": 1800000113.9999955, "event": "SUBMIT", "id": "st-0209", "source": "decision", "priority": 1}
+{"ts": 1800000113.9999955, "event": "SUBMIT", "id": "st-0210", "source": "vlm", "priority": 2}
+{"ts": 1800000113.9999955, "event": "DROP_CANDIDATE", "id": "st-0210", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000114.1999955, "event": "SUBMIT", "id": "st-0211", "source": "decision", "priority": 3}
+{"ts": 1800000114.4999955, "event": "SUBMIT", "id": "st-0212", "source": "decision", "priority": 3}
+{"ts": 1800000114.7999954, "event": "SUBMIT", "id": "st-0213", "source": "decision", "priority": 3}
+{"ts": 1800000114.9999955, "event": "SUBMIT", "id": "st-0214", "source": "vlm", "priority": 2}
+{"ts": 1800000114.9999955, "event": "DROP_CANDIDATE", "id": "st-0214", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000115.0999954, "event": "SUBMIT", "id": "st-0215", "source": "decision", "priority": 3}
+{"ts": 1800000115.3999953, "event": "SUBMIT", "id": "st-0216", "source": "decision", "priority": 3}
+{"ts": 1800000115.6999953, "event": "SUBMIT", "id": "st-0217", "source": "decision", "priority": 3}
+{"ts": 1800000115.9999952, "event": "SUBMIT", "id": "st-0218", "source": "decision", "priority": 3}
+{"ts": 1800000115.9999952, "event": "SUBMIT", "id": "st-0219", "source": "decision", "priority": 1}
+{"ts": 1800000115.9999952, "event": "SUBMIT", "id": "st-0220", "source": "vlm", "priority": 2}
+{"ts": 1800000115.9999952, "event": "DROP_CANDIDATE", "id": "st-0220", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000116.0, "event": "SELECT", "id": "st-0199", "path": "normal"}
+{"ts": 1800000116.0, "event": "PLAY", "id": "st-0199", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000116.2999952, "event": "SUBMIT", "id": "st-0221", "source": "decision", "priority": 3}
+{"ts": 1800000116.5999951, "event": "SUBMIT", "id": "st-0222", "source": "decision", "priority": 3}
+{"ts": 1800000116.899995, "event": "SUBMIT", "id": "st-0223", "source": "decision", "priority": 3}
+{"ts": 1800000116.999995, "event": "SUBMIT", "id": "st-0224", "source": "vlm", "priority": 2}
+{"ts": 1800000116.999995, "event": "DROP_CANDIDATE", "id": "st-0224", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000117.199995, "event": "SUBMIT", "id": "st-0225", "source": "decision", "priority": 3}
+{"ts": 1800000117.499995, "event": "SUBMIT", "id": "st-0226", "source": "decision", "priority": 3}
+{"ts": 1800000117.799995, "event": "SUBMIT", "id": "st-0227", "source": "decision", "priority": 3}
+{"ts": 1800000117.999995, "event": "SUBMIT", "id": "st-0228", "source": "decision", "priority": 1}
+{"ts": 1800000117.999995, "event": "SUBMIT", "id": "st-0229", "source": "vlm", "priority": 2}
+{"ts": 1800000117.999995, "event": "DROP_CANDIDATE", "id": "st-0229", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000118.099995, "event": "SUBMIT", "id": "st-0230", "source": "decision", "priority": 3}
+{"ts": 1800000118.3999949, "event": "SUBMIT", "id": "st-0231", "source": "decision", "priority": 3}
+{"ts": 1800000118.5, "event": "VLM_SCORE_SELECT", "id": "st-0220", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000118.5, "event": "SELECT", "id": "st-0220", "path": "normal"}
+{"ts": 1800000118.5, "event": "PLAY", "id": "st-0220", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000118.6999948, "event": "SUBMIT", "id": "st-0232", "source": "decision", "priority": 3}
+{"ts": 1800000118.9999948, "event": "SUBMIT", "id": "st-0233", "source": "decision", "priority": 3}
+{"ts": 1800000118.9999948, "event": "SUBMIT", "id": "st-0234", "source": "vlm", "priority": 2}
+{"ts": 1800000118.9999948, "event": "DROP_CANDIDATE", "id": "st-0234", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000119.2999947, "event": "SUBMIT", "id": "st-0235", "source": "decision", "priority": 3}
+{"ts": 1800000119.5999947, "event": "SUBMIT", "id": "st-0236", "source": "decision", "priority": 3}
+{"ts": 1800000119.8999946, "event": "SUBMIT", "id": "st-0237", "source": "decision", "priority": 3}
+{"ts": 1800000119.9999945, "event": "SUBMIT", "id": "st-0238", "source": "decision", "priority": 1}
+{"ts": 1800000119.9999945, "event": "SUBMIT", "id": "st-0239", "source": "vlm", "priority": 2}
+{"ts": 1800000119.9999945, "event": "DROP_CANDIDATE", "id": "st-0239", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000120.1999946, "event": "SUBMIT", "id": "st-0240", "source": "decision", "priority": 3}
+{"ts": 1800000120.4999945, "event": "SUBMIT", "id": "st-0241", "source": "decision", "priority": 3}
+{"ts": 1800000120.7999945, "event": "SUBMIT", "id": "st-0242", "source": "decision", "priority": 3}
+{"ts": 1800000120.9999945, "event": "SUBMIT", "id": "st-0243", "source": "vlm", "priority": 2}
+{"ts": 1800000120.9999945, "event": "DROP_CANDIDATE", "id": "st-0243", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000121.0, "event": "SELECT", "id": "st-0219", "path": "normal"}
+{"ts": 1800000121.0, "event": "PLAY", "id": "st-0219", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000121.0999944, "event": "SUBMIT", "id": "st-0244", "source": "decision", "priority": 3}
+{"ts": 1800000121.3999944, "event": "SUBMIT", "id": "st-0245", "source": "decision", "priority": 3}
+{"ts": 1800000121.6999943, "event": "SUBMIT", "id": "st-0246", "source": "decision", "priority": 3}
+{"ts": 1800000121.9999943, "event": "SUBMIT", "id": "st-0247", "source": "decision", "priority": 3}
+{"ts": 1800000121.9999943, "event": "SUBMIT", "id": "st-0248", "source": "decision", "priority": 1}
+{"ts": 1800000121.9999943, "event": "SUBMIT", "id": "st-0249", "source": "vlm", "priority": 2}
+{"ts": 1800000121.9999943, "event": "DROP_CANDIDATE", "id": "st-0249", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000122.2999942, "event": "SUBMIT", "id": "st-0250", "source": "decision", "priority": 3}
+{"ts": 1800000122.5999942, "event": "SUBMIT", "id": "st-0251", "source": "decision", "priority": 3}
+{"ts": 1800000122.8999941, "event": "SUBMIT", "id": "st-0252", "source": "decision", "priority": 3}
+{"ts": 1800000122.999994, "event": "SUBMIT", "id": "st-0253", "source": "vlm", "priority": 2}
+{"ts": 1800000122.999994, "event": "DROP_CANDIDATE", "id": "st-0253", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000123.199994, "event": "SUBMIT", "id": "st-0254", "source": "decision", "priority": 3}
+{"ts": 1800000123.499994, "event": "SUBMIT", "id": "st-0255", "source": "decision", "priority": 3}
+{"ts": 1800000123.5, "event": "VLM_SCORE_SELECT", "id": "st-0243", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000123.5, "event": "SELECT", "id": "st-0243", "path": "normal"}
+{"ts": 1800000123.5, "event": "PLAY", "id": "st-0243", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000123.799994, "event": "SUBMIT", "id": "st-0256", "source": "decision", "priority": 3}
+{"ts": 1800000123.999994, "event": "SUBMIT", "id": "st-0257", "source": "decision", "priority": 1}
+{"ts": 1800000123.999994, "event": "SUBMIT", "id": "st-0258", "source": "vlm", "priority": 2}
+{"ts": 1800000123.999994, "event": "DROP_CANDIDATE", "id": "st-0258", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000124.099994, "event": "SUBMIT", "id": "st-0259", "source": "decision", "priority": 3}
+{"ts": 1800000124.399994, "event": "SUBMIT", "id": "st-0260", "source": "decision", "priority": 3}
+{"ts": 1800000124.6999938, "event": "SUBMIT", "id": "st-0261", "source": "decision", "priority": 3}
+{"ts": 1800000124.9999938, "event": "SUBMIT", "id": "st-0262", "source": "decision", "priority": 3}
+{"ts": 1800000124.9999938, "event": "SUBMIT", "id": "st-0263", "source": "vlm", "priority": 2}
+{"ts": 1800000124.9999938, "event": "DROP_CANDIDATE", "id": "st-0263", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000125.2999938, "event": "SUBMIT", "id": "st-0264", "source": "decision", "priority": 3}
+{"ts": 1800000125.5999937, "event": "SUBMIT", "id": "st-0265", "source": "decision", "priority": 3}
+{"ts": 1800000125.8999937, "event": "SUBMIT", "id": "st-0266", "source": "decision", "priority": 3}
+{"ts": 1800000125.9999936, "event": "SUBMIT", "id": "st-0267", "source": "decision", "priority": 1}
+{"ts": 1800000125.9999936, "event": "SUBMIT", "id": "st-0268", "source": "vlm", "priority": 2}
+{"ts": 1800000125.9999936, "event": "DROP_CANDIDATE", "id": "st-0268", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000126.0, "event": "SELECT", "id": "st-0248", "path": "normal"}
+{"ts": 1800000126.0, "event": "PLAY", "id": "st-0248", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000126.1999936, "event": "SUBMIT", "id": "st-0269", "source": "decision", "priority": 3}
+{"ts": 1800000126.4999936, "event": "SUBMIT", "id": "st-0270", "source": "decision", "priority": 3}
+{"ts": 1800000126.7999935, "event": "SUBMIT", "id": "st-0271", "source": "decision", "priority": 3}
+{"ts": 1800000126.9999936, "event": "SUBMIT", "id": "st-0272", "source": "vlm", "priority": 2}
+{"ts": 1800000126.9999936, "event": "DROP_CANDIDATE", "id": "st-0272", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000127.0999935, "event": "SUBMIT", "id": "st-0273", "source": "decision", "priority": 3}
+{"ts": 1800000127.3999934, "event": "SUBMIT", "id": "st-0274", "source": "decision", "priority": 3}
+{"ts": 1800000127.6999934, "event": "SUBMIT", "id": "st-0275", "source": "decision", "priority": 3}
+{"ts": 1800000127.9999933, "event": "SUBMIT", "id": "st-0276", "source": "decision", "priority": 3}
+{"ts": 1800000127.9999933, "event": "SUBMIT", "id": "st-0277", "source": "decision", "priority": 1}
+{"ts": 1800000127.9999933, "event": "SUBMIT", "id": "st-0278", "source": "vlm", "priority": 2}
+{"ts": 1800000127.9999933, "event": "DROP_CANDIDATE", "id": "st-0278", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000128.2999933, "event": "SUBMIT", "id": "st-0279", "source": "decision", "priority": 3}
+{"ts": 1800000128.5, "event": "VLM_SCORE_SELECT", "id": "st-0268", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000128.5, "event": "SELECT", "id": "st-0268", "path": "normal"}
+{"ts": 1800000128.5, "event": "PLAY", "id": "st-0268", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000128.5999932, "event": "SUBMIT", "id": "st-0280", "source": "decision", "priority": 3}
+{"ts": 1800000128.8999932, "event": "SUBMIT", "id": "st-0281", "source": "decision", "priority": 3}
+{"ts": 1800000128.999993, "event": "SUBMIT", "id": "st-0282", "source": "vlm", "priority": 2}
+{"ts": 1800000128.999993, "event": "DROP_CANDIDATE", "id": "st-0282", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000129.1999931, "event": "SUBMIT", "id": "st-0283", "source": "decision", "priority": 3}
+{"ts": 1800000129.499993, "event": "SUBMIT", "id": "st-0284", "source": "decision", "priority": 3}
+{"ts": 1800000129.799993, "event": "SUBMIT", "id": "st-0285", "source": "decision", "priority": 3}
+{"ts": 1800000129.999993, "event": "SUBMIT", "id": "st-0286", "source": "decision", "priority": 1}
+{"ts": 1800000129.999993, "event": "SUBMIT", "id": "st-0287", "source": "vlm", "priority": 2}
+{"ts": 1800000129.999993, "event": "DROP_CANDIDATE", "id": "st-0287", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000130.099993, "event": "SUBMIT", "id": "st-0288", "source": "decision", "priority": 3}
+{"ts": 1800000130.399993, "event": "SUBMIT", "id": "st-0289", "source": "decision", "priority": 3}
+{"ts": 1800000130.699993, "event": "SUBMIT", "id": "st-0290", "source": "decision", "priority": 3}
+{"ts": 1800000130.9999928, "event": "SUBMIT", "id": "st-0291", "source": "decision", "priority": 3}
+{"ts": 1800000130.9999928, "event": "SUBMIT", "id": "st-0292", "source": "vlm", "priority": 2}
+{"ts": 1800000130.9999928, "event": "DROP_CANDIDATE", "id": "st-0292", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000131.0, "event": "SELECT", "id": "st-0267", "path": "normal"}
+{"ts": 1800000131.0, "event": "PLAY", "id": "st-0267", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000131.2999928, "event": "SUBMIT", "id": "st-0293", "source": "decision", "priority": 3}
+{"ts": 1800000131.5999928, "event": "SUBMIT", "id": "st-0294", "source": "decision", "priority": 3}
+{"ts": 1800000131.8999927, "event": "SUBMIT", "id": "st-0295", "source": "decision", "priority": 3}
+{"ts": 1800000131.9999926, "event": "SUBMIT", "id": "st-0296", "source": "decision", "priority": 1}
+{"ts": 1800000131.9999926, "event": "SUBMIT", "id": "st-0297", "source": "vlm", "priority": 2}
+{"ts": 1800000131.9999926, "event": "DROP_CANDIDATE", "id": "st-0297", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000132.1999927, "event": "SUBMIT", "id": "st-0298", "source": "decision", "priority": 3}
+{"ts": 1800000132.4999926, "event": "SUBMIT", "id": "st-0299", "source": "decision", "priority": 3}
+{"ts": 1800000132.7999926, "event": "SUBMIT", "id": "st-0300", "source": "decision", "priority": 3}
+{"ts": 1800000132.9999926, "event": "SUBMIT", "id": "st-0301", "source": "vlm", "priority": 2}
+{"ts": 1800000132.9999926, "event": "DROP_CANDIDATE", "id": "st-0301", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000133.0999925, "event": "SUBMIT", "id": "st-0302", "source": "decision", "priority": 3}
+{"ts": 1800000133.3999925, "event": "SUBMIT", "id": "st-0303", "source": "decision", "priority": 3}
+{"ts": 1800000133.5, "event": "VLM_SCORE_SELECT", "id": "st-0292", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000133.5, "event": "SELECT", "id": "st-0292", "path": "normal"}
+{"ts": 1800000133.5, "event": "PLAY", "id": "st-0292", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000133.6999924, "event": "SUBMIT", "id": "st-0304", "source": "decision", "priority": 3}
+{"ts": 1800000133.9999924, "event": "SUBMIT", "id": "st-0305", "source": "decision", "priority": 3}
+{"ts": 1800000133.9999924, "event": "SUBMIT", "id": "st-0306", "source": "decision", "priority": 1}
+{"ts": 1800000133.9999924, "event": "SUBMIT", "id": "st-0307", "source": "vlm", "priority": 2}
+{"ts": 1800000133.9999924, "event": "DROP_CANDIDATE", "id": "st-0307", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000134.2999923, "event": "SUBMIT", "id": "st-0308", "source": "decision", "priority": 3}
+{"ts": 1800000134.5999923, "event": "SUBMIT", "id": "st-0309", "source": "decision", "priority": 3}
+{"ts": 1800000134.8999922, "event": "SUBMIT", "id": "st-0310", "source": "decision", "priority": 3}
+{"ts": 1800000134.9999921, "event": "SUBMIT", "id": "st-0311", "source": "vlm", "priority": 2}
+{"ts": 1800000134.9999921, "event": "DROP_CANDIDATE", "id": "st-0311", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000135.1999922, "event": "SUBMIT", "id": "st-0312", "source": "decision", "priority": 3}
+{"ts": 1800000135.4999921, "event": "SUBMIT", "id": "st-0313", "source": "decision", "priority": 3}
+{"ts": 1800000135.799992, "event": "SUBMIT", "id": "st-0314", "source": "decision", "priority": 3}
+{"ts": 1800000135.9999921, "event": "SUBMIT", "id": "st-0315", "source": "decision", "priority": 1}
+{"ts": 1800000135.9999921, "event": "SUBMIT", "id": "st-0316", "source": "vlm", "priority": 2}
+{"ts": 1800000135.9999921, "event": "DROP_CANDIDATE", "id": "st-0316", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000136.0, "event": "SELECT", "id": "st-0296", "path": "normal"}
+{"ts": 1800000136.0, "event": "PLAY", "id": "st-0296", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000136.099992, "event": "SUBMIT", "id": "st-0317", "source": "decision", "priority": 3}
+{"ts": 1800000136.399992, "event": "SUBMIT", "id": "st-0318", "source": "decision", "priority": 3}
+{"ts": 1800000136.699992, "event": "SUBMIT", "id": "st-0319", "source": "decision", "priority": 3}
+{"ts": 1800000136.999992, "event": "SUBMIT", "id": "st-0320", "source": "decision", "priority": 3}
+{"ts": 1800000136.999992, "event": "SUBMIT", "id": "st-0321", "source": "vlm", "priority": 2}
+{"ts": 1800000136.999992, "event": "DROP_CANDIDATE", "id": "st-0321", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000137.2999918, "event": "SUBMIT", "id": "st-0322", "source": "decision", "priority": 3}
+{"ts": 1800000137.5999918, "event": "SUBMIT", "id": "st-0323", "source": "decision", "priority": 3}
+{"ts": 1800000137.8999918, "event": "SUBMIT", "id": "st-0324", "source": "decision", "priority": 3}
+{"ts": 1800000137.9999917, "event": "SUBMIT", "id": "st-0325", "source": "decision", "priority": 1}
+{"ts": 1800000137.9999917, "event": "SUBMIT", "id": "st-0326", "source": "vlm", "priority": 2}
+{"ts": 1800000137.9999917, "event": "DROP_CANDIDATE", "id": "st-0326", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000138.1999917, "event": "SUBMIT", "id": "st-0327", "source": "decision", "priority": 3}
+{"ts": 1800000138.4999917, "event": "SUBMIT", "id": "st-0328", "source": "decision", "priority": 3}
+{"ts": 1800000138.5, "event": "VLM_SCORE_SELECT", "id": "st-0316", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000138.5, "event": "SELECT", "id": "st-0316", "path": "normal"}
+{"ts": 1800000138.5, "event": "PLAY", "id": "st-0316", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000138.7999916, "event": "SUBMIT", "id": "st-0329", "source": "decision", "priority": 3}
+{"ts": 1800000138.9999917, "event": "SUBMIT", "id": "st-0330", "source": "vlm", "priority": 2}
+{"ts": 1800000138.9999917, "event": "DROP_CANDIDATE", "id": "st-0330", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000139.0999916, "event": "SUBMIT", "id": "st-0331", "source": "decision", "priority": 3}
+{"ts": 1800000139.3999915, "event": "SUBMIT", "id": "st-0332", "source": "decision", "priority": 3}
+{"ts": 1800000139.6999915, "event": "SUBMIT", "id": "st-0333", "source": "decision", "priority": 3}
+{"ts": 1800000139.9999914, "event": "SUBMIT", "id": "st-0334", "source": "decision", "priority": 3}
+{"ts": 1800000139.9999914, "event": "SUBMIT", "id": "st-0335", "source": "decision", "priority": 1}
+{"ts": 1800000139.9999914, "event": "SUBMIT", "id": "st-0336", "source": "vlm", "priority": 2}
+{"ts": 1800000139.9999914, "event": "DROP_CANDIDATE", "id": "st-0336", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000140.2999914, "event": "SUBMIT", "id": "st-0337", "source": "decision", "priority": 3}
+{"ts": 1800000140.5999913, "event": "SUBMIT", "id": "st-0338", "source": "decision", "priority": 3}
+{"ts": 1800000140.8999913, "event": "SUBMIT", "id": "st-0339", "source": "decision", "priority": 3}
+{"ts": 1800000140.9999912, "event": "SUBMIT", "id": "st-0340", "source": "vlm", "priority": 2}
+{"ts": 1800000140.9999912, "event": "DROP_CANDIDATE", "id": "st-0340", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000141.0, "event": "SELECT", "id": "st-0315", "path": "normal"}
+{"ts": 1800000141.0, "event": "PLAY", "id": "st-0315", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000141.1999912, "event": "SUBMIT", "id": "st-0341", "source": "decision", "priority": 3}
+{"ts": 1800000141.4999912, "event": "SUBMIT", "id": "st-0342", "source": "decision", "priority": 3}
+{"ts": 1800000141.7999911, "event": "SUBMIT", "id": "st-0343", "source": "decision", "priority": 3}
+{"ts": 1800000141.9999912, "event": "SUBMIT", "id": "st-0344", "source": "decision", "priority": 1}
+{"ts": 1800000141.9999912, "event": "SUBMIT", "id": "st-0345", "source": "vlm", "priority": 2}
+{"ts": 1800000141.9999912, "event": "DROP_CANDIDATE", "id": "st-0345", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000142.099991, "event": "SUBMIT", "id": "st-0346", "source": "decision", "priority": 3}
+{"ts": 1800000142.399991, "event": "SUBMIT", "id": "st-0347", "source": "decision", "priority": 3}
+{"ts": 1800000142.699991, "event": "SUBMIT", "id": "st-0348", "source": "decision", "priority": 3}
+{"ts": 1800000142.999991, "event": "SUBMIT", "id": "st-0349", "source": "decision", "priority": 3}
+{"ts": 1800000142.999991, "event": "SUBMIT", "id": "st-0350", "source": "vlm", "priority": 2}
+{"ts": 1800000142.999991, "event": "DROP_CANDIDATE", "id": "st-0350", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000143.299991, "event": "SUBMIT", "id": "st-0351", "source": "decision", "priority": 3}
+{"ts": 1800000143.5, "event": "VLM_SCORE_SELECT", "id": "st-0340", "wait": 2.5, "score": 35.0, "aging": false}
+{"ts": 1800000143.5, "event": "SELECT", "id": "st-0340", "path": "normal"}
+{"ts": 1800000143.5, "event": "PLAY", "id": "st-0340", "source": "vlm", "priority": 2, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000143.5999908, "event": "SUBMIT", "id": "st-0352", "source": "decision", "priority": 3}
+{"ts": 1800000143.8999908, "event": "SUBMIT", "id": "st-0353", "source": "decision", "priority": 3}
+{"ts": 1800000143.9999907, "event": "SUBMIT", "id": "st-0354", "source": "decision", "priority": 1}
+{"ts": 1800000143.9999907, "event": "SUBMIT", "id": "st-0355", "source": "vlm", "priority": 2}
+{"ts": 1800000143.9999907, "event": "DROP_CANDIDATE", "id": "st-0355", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000144.1999907, "event": "SUBMIT", "id": "st-0356", "source": "decision", "priority": 3}
+{"ts": 1800000144.4999907, "event": "SUBMIT", "id": "st-0357", "source": "decision", "priority": 3}
+{"ts": 1800000144.7999907, "event": "SUBMIT", "id": "st-0358", "source": "decision", "priority": 3}
+{"ts": 1800000144.9999907, "event": "SUBMIT", "id": "st-0359", "source": "vlm", "priority": 2}
+{"ts": 1800000144.9999907, "event": "DROP_CANDIDATE", "id": "st-0359", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000145.0999906, "event": "SUBMIT", "id": "st-0360", "source": "decision", "priority": 3}
+{"ts": 1800000145.3999906, "event": "SUBMIT", "id": "st-0361", "source": "decision", "priority": 3}
+{"ts": 1800000145.6999905, "event": "SUBMIT", "id": "st-0362", "source": "decision", "priority": 3}
+{"ts": 1800000145.9999905, "event": "SCENARIO_END", "scenario": "stress"}
+{"ts": 1800000145.9999905, "event": "SCENARIO_START", "scenario": "burst"}
+{"ts": 1800000145.9999905, "event": "SUBMIT", "id": "bu-0363", "source": "vlm", "priority": 2}
+{"ts": 1800000145.9999905, "event": "DROP_CANDIDATE", "id": "bu-0363", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000146.0, "event": "SELECT", "id": "st-0335", "path": "normal"}
+{"ts": 1800000146.0, "event": "PLAY", "id": "st-0335", "source": "decision", "priority": 1, "scenario": "stress", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000146.4999905, "event": "SUBMIT", "id": "bu-0364", "source": "vlm", "priority": 2}
+{"ts": 1800000146.4999905, "event": "DROP_CANDIDATE", "id": "bu-0364", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000146.9999905, "event": "SUBMIT", "id": "bu-0365", "source": "vlm", "priority": 2}
+{"ts": 1800000146.9999905, "event": "DROP_CANDIDATE", "id": "bu-0365", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000147.4999905, "event": "SUBMIT", "id": "bu-0366", "source": "vlm", "priority": 2}
+{"ts": 1800000147.4999905, "event": "DROP_CANDIDATE", "id": "bu-0366", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000147.9999905, "event": "SUBMIT", "id": "bu-0367", "source": "vlm", "priority": 2}
+{"ts": 1800000147.9999905, "event": "DROP_CANDIDATE", "id": "bu-0367", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000148.4999905, "event": "SUBMIT", "id": "bu-0368", "source": "vlm", "priority": 2}
+{"ts": 1800000148.4999905, "event": "DROP_CANDIDATE", "id": "bu-0368", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000148.5, "event": "VLM_SCORE_SELECT", "id": "bu-0366", "wait": 1.0, "score": 20.0, "aging": false}
+{"ts": 1800000148.5, "event": "SELECT", "id": "bu-0366", "path": "normal"}
+{"ts": 1800000148.5, "event": "PLAY", "id": "bu-0366", "source": "vlm", "priority": 2, "scenario": "burst", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000148.9999905, "event": "SUBMIT", "id": "bu-0369", "source": "vlm", "priority": 2}
+{"ts": 1800000148.9999905, "event": "DROP_CANDIDATE", "id": "bu-0369", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000149.4999905, "event": "SUBMIT", "id": "bu-0370", "source": "vlm", "priority": 2}
+{"ts": 1800000149.4999905, "event": "DROP_CANDIDATE", "id": "bu-0370", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000149.4999905, "event": "SCENARIO_END", "scenario": "burst"}
+{"ts": 1800000149.4999905, "event": "SCENARIO_START", "scenario": "starvation_test"}
+{"ts": 1800000149.4999905, "event": "SUBMIT", "id": "st-0371", "source": "decision", "priority": 1}
+{"ts": 1800000149.4999905, "event": "SUBMIT", "id": "st-0372", "source": "vlm", "priority": 2}
+{"ts": 1800000149.4999905, "event": "DROP_CANDIDATE", "id": "st-0372", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000149.9999905, "event": "SUBMIT", "id": "st-0373", "source": "decision", "priority": 1}
+{"ts": 1800000150.4999905, "event": "SUBMIT", "id": "st-0374", "source": "decision", "priority": 1}
+{"ts": 1800000150.9999905, "event": "SUBMIT", "id": "st-0375", "source": "decision", "priority": 1}
+{"ts": 1800000151.0, "event": "SELECT", "id": "st-0373", "path": "normal"}
+{"ts": 1800000151.0, "event": "PLAY", "id": "st-0373", "source": "decision", "priority": 1, "scenario": "starvation_test", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000151.4999905, "event": "SUBMIT", "id": "st-0376", "source": "decision", "priority": 1}
+{"ts": 1800000151.4999905, "event": "SUBMIT", "id": "st-0377", "source": "vlm", "priority": 2}
+{"ts": 1800000151.4999905, "event": "DROP_CANDIDATE", "id": "st-0377", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000151.9999905, "event": "SUBMIT", "id": "st-0378", "source": "decision", "priority": 1}
+{"ts": 1800000152.4999905, "event": "SUBMIT", "id": "st-0379", "source": "decision", "priority": 1}
+{"ts": 1800000152.9999905, "event": "SUBMIT", "id": "st-0380", "source": "decision", "priority": 1}
+{"ts": 1800000153.4999905, "event": "SUBMIT", "id": "st-0381", "source": "decision", "priority": 1}
+{"ts": 1800000153.4999905, "event": "SUBMIT", "id": "st-0382", "source": "vlm", "priority": 2}
+{"ts": 1800000153.4999905, "event": "DROP_CANDIDATE", "id": "st-0382", "semantic": "LOW", "queue_size": 3, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000153.5, "event": "SELECT", "id": "st-0372", "path": "aging"}
+{"ts": 1800000153.5, "event": "PLAY", "id": "st-0372", "source": "vlm", "priority": 2, "scenario": "starvation_test", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000153.9999905, "event": "SUBMIT", "id": "st-0383", "source": "decision", "priority": 1}
+{"ts": 1800000154.4999905, "event": "SUBMIT", "id": "st-0384", "source": "decision", "priority": 1}
+{"ts": 1800000154.9999905, "event": "SUBMIT", "id": "st-0385", "source": "decision", "priority": 1}
+{"ts": 1800000155.4999905, "event": "SUBMIT", "id": "st-0386", "source": "decision", "priority": 1}
+{"ts": 1800000155.4999905, "event": "SUBMIT", "id": "st-0387", "source": "vlm", "priority": 2}
+{"ts": 1800000155.4999905, "event": "DROP_CANDIDATE", "id": "st-0387", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000155.9999905, "event": "SUBMIT", "id": "st-0388", "source": "decision", "priority": 1}
+{"ts": 1800000156.0, "event": "SELECT", "id": "st-0377", "path": "aging"}
+{"ts": 1800000156.0, "event": "PLAY", "id": "st-0377", "source": "vlm", "priority": 2, "scenario": "starvation_test", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000156.4999905, "event": "SUBMIT", "id": "st-0389", "source": "decision", "priority": 1}
+{"ts": 1800000156.9999905, "event": "SUBMIT", "id": "st-0390", "source": "decision", "priority": 1}
+{"ts": 1800000157.4999905, "event": "SUBMIT", "id": "st-0391", "source": "decision", "priority": 1}
+{"ts": 1800000157.4999905, "event": "SUBMIT", "id": "st-0392", "source": "vlm", "priority": 2}
+{"ts": 1800000157.4999905, "event": "DROP_CANDIDATE", "id": "st-0392", "semantic": "LOW", "queue_size": 2, "reason": "low_semantic_under_pressure"}
+{"ts": 1800000157.9999905, "event": "SUBMIT", "id": "st-0393", "source": "decision", "priority": 1}
+{"ts": 1800000158.4999905, "event": "SUBMIT", "id": "st-0394", "source": "decision", "priority": 1}
+{"ts": 1800000158.5, "event": "SELECT", "id": "st-0382", "path": "aging"}
+{"ts": 1800000158.5, "event": "PLAY", "id": "st-0382", "source": "vlm", "priority": 2, "scenario": "starvation_test", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000158.9999905, "event": "SUBMIT", "id": "st-0395", "source": "decision", "priority": 1}
+{"ts": 1800000159.4999905, "event": "SCENARIO_END", "scenario": "starvation_test"}
+{"ts": 1800000159.4999905, "event": "SCENARIO_START", "scenario": "recovery"}
+{"ts": 1800000159.4999905, "event": "SUBMIT", "id": "re-0396", "source": "decision", "priority": 3}
+{"ts": 1800000161.0, "event": "SELECT", "id": "st-0387", "path": "aging"}
+{"ts": 1800000161.0, "event": "PLAY", "id": "st-0387", "source": "vlm", "priority": 2, "scenario": "starvation_test", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000161.4999905, "event": "SUBMIT", "id": "re-0397", "source": "decision", "priority": 3}
+{"ts": 1800000163.4999905, "event": "SUBMIT", "id": "re-0398", "source": "decision", "priority": 3}
+{"ts": 1800000163.5, "event": "SELECT", "id": "st-0392", "path": "aging"}
+{"ts": 1800000163.5, "event": "PLAY", "id": "st-0392", "source": "vlm", "priority": 2, "scenario": "starvation_test", "user_focus": false, "force_play": true, "aging_boost": true}
+{"ts": 1800000165.4999905, "event": "SUBMIT", "id": "re-0399", "source": "decision", "priority": 3}
+{"ts": 1800000166.0, "event": "SELECT", "id": "st-0393", "path": "normal"}
+{"ts": 1800000166.0, "event": "PLAY", "id": "st-0393", "source": "decision", "priority": 1, "scenario": "starvation_test", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000167.4999905, "event": "SUBMIT", "id": "re-0400", "source": "decision", "priority": 3}
+{"ts": 1800000168.5, "event": "SELECT", "id": "st-0394", "path": "normal"}
+{"ts": 1800000168.5, "event": "PLAY", "id": "st-0394", "source": "decision", "priority": 1, "scenario": "starvation_test", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000169.4999905, "event": "SUBMIT", "id": "re-0401", "source": "decision", "priority": 3}
+{"ts": 1800000171.0, "event": "SELECT", "id": "st-0395", "path": "normal"}
+{"ts": 1800000171.0, "event": "PLAY", "id": "st-0395", "source": "decision", "priority": 1, "scenario": "starvation_test", "user_focus": false, "force_play": false, "aging_boost": false}
+{"ts": 1800000171.4999905, "event": "SUBMIT", "id": "re-0402", "source": "decision", "priority": 3}
+{"ts": 1800000173.4999905, "event": "SUBMIT", "id": "re-0403", "source": "decision", "priority": 3}
+{"ts": 1800000175.4999905, "event": "SUBMIT", "id": "re-0404", "source": "decision", "priority": 3}
+{"ts": 1800000177.4999905, "event": "SUBMIT", "id": "re-0405", "source": "decision", "priority": 3}
+{"ts": 1800000179.4999905, "event": "SUBMIT", "id": "re-0406", "source": "decision", "priority": 3}
+{"ts": 1800000181.4999905, "event": "SUBMIT", "id": "re-0407", "source": "decision", "priority": 3}
+{"ts": 1800000183.4999905, "event": "SUBMIT", "id": "re-0408", "source": "decision", "priority": 3}
+{"ts": 1800000185.4999905, "event": "SUBMIT", "id": "re-0409", "source": "decision", "priority": 3}
+{"ts": 1800000187.4999905, "event": "SUBMIT", "id": "re-0410", "source": "decision", "priority": 3}
+{"ts": 1800000189.4999905, "event": "SCENARIO_END", "scenario": "recovery"}
+{"ts": 1777791695.1382565, "event": "SUBMIT", "id": "a47b8b", "source": "startup", "priority": 0}
+{"ts": 1777791695.1387079, "event": "SELECT", "id": "a47b8b", "path": "normal"}
+{"ts": 1777791695.6406407, "event": "SUBMIT", "id": "2cf802", "source": "decision", "priority": 1}
+{"ts": 1777791695.6411815, "event": "SELECT", "id": "2cf802", "path": "normal"}
+{"ts": 1777791696.393756, "event": "SUBMIT", "id": "6bc333", "source": "vlm", "priority": 2}
+{"ts": 1777791696.3943727, "event": "SELECT", "id": "6bc333", "path": "normal"}
+{"ts": 1777791705.2597, "event": "SUBMIT", "id": "5c6d76", "source": "startup", "priority": 0}
+{"ts": 1777791705.260805, "event": "SUBMIT", "id": "68826a", "source": "decision", "priority": 1}
+{"ts": 1777791705.2616873, "event": "SUBMIT", "id": "165e32", "source": "decision", "priority": 1}
+{"ts": 1777791705.2623773, "event": "SUBMIT", "id": "50d244", "source": "decision", "priority": 1}
+{"ts": 1777791705.2632105, "event": "SUBMIT", "id": "2222bf", "source": "decision", "priority": 1}

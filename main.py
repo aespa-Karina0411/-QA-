@@ -73,11 +73,28 @@ class AsyncASRInput:
             print(f"[ASR] 后台识别失败: {exc}")
 
 
-def main():
-    cap = cv2.VideoCapture(0)
+def run():
+    import os
+    camera_src = os.getenv("CAMERA_SRC", "0")
+    if camera_src == "csi":
+        cap = cv2.VideoCapture(
+            "libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink",
+            cv2.CAP_GSTREAMER
+        )
+    else:
+        cap = cv2.VideoCapture(int(camera_src))
+    if not cap.isOpened():
+        print("[WARN] Camera open failed, fallback to 0")
+        cap = cv2.VideoCapture(0)
 
-    yolo_utils.load_yolo_model("yolov8n.pt")
-    tts_local_utils.load_tts_model("models/piper/zh_CN-huayan-medium.onnx")
+    try:
+        yolo_utils.load_yolo_model("yolov8n.pt")
+    except Exception as e:
+        print("[WARN] YOLO model load failed:", e)
+    try:
+        tts_local_utils.load_tts_model("models/piper/zh_CN-huayan-medium.onnx")
+    except Exception as e:
+        print("[WARN] TTS model load failed:", e)
 
     asr = ASRManager()
     async_asr = AsyncASRInput(asr)
@@ -104,13 +121,15 @@ def main():
         while True:
             ret, frame = cap.read()
             if not ret:
-                break
+                continue
 
             controller.context["current_image"] = encode_frame_as_data_url(frame.copy())
 
             frame_count += 1
             if frame_count % detect_interval == 0:
-                objects = yolo_utils.detect_objects(frame, conf_threshold=0.5, imgsz=320)
+                conf = CONFIG.get("yolo.conf_threshold", 0.5)
+                imgsz = CONFIG.get("yolo.imgsz", 320)
+                objects = yolo_utils.detect_objects(frame, conf_threshold=conf, imgsz=imgsz)
 
                 nav_event = {
                     "type": "navigation",
@@ -157,7 +176,9 @@ def main():
                 dr, _, _ = select.select([sys.stdin], [], [], 0)
                 if dr:
                     line = sys.stdin.readline().strip()
-                    if line.lower() == 'q':
+                    if line.lower() == 'a':
+                        async_asr.start_listening()
+                    elif line.lower() == 'q':
                         print("[INFO] Quit signal received")
                         break
 
@@ -169,6 +190,15 @@ def main():
         cv2.destroyAllWindows()
         controller.save_log("run_log.json")
         print("[System] 日志已保存至 run_log.json")
+
+
+def main():
+    try:
+        run()
+    except Exception as e:
+        print(f"[FATAL] {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

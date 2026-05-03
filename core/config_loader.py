@@ -1,6 +1,7 @@
 """配置加载器：YAML 加载 + base/profile 合并 + 点号访问"""
 
 import os
+import platform
 import yaml
 
 
@@ -12,11 +13,14 @@ class ConfigLoader:
 
         self._load(self._base_path)
 
+        default_profile = "pi" if platform.system() == "Linux" else "pc"
         profile = (
             profile
             or os.environ.get("EDGE_VISION_PROFILE")
-            or self._data.get("profile", "pc")
+            or self._data.get("profile", default_profile)
         )
+        if platform.system() == "Linux" and profile == "pc":
+            print("[WARN] Running on Linux but using PC profile")
         self._merge_profile(profile)
 
     def _load(self, path):

@@ -20,9 +20,16 @@ from vosk import Model, KaldiRecognizer
 try:
     import keyboard
     KEYBOARD_AVAILABLE = True
-except ImportError:
+except Exception as e:
     KEYBOARD_AVAILABLE = False
-    print("提示: keyboard 库未安装，PTT 模式将回退到输入提示方式。")
+    print("[WARN] keyboard not available:", e)
+
+if KEYBOARD_AVAILABLE:
+    try:
+        keyboard.is_pressed('enter')
+    except Exception as e:
+        KEYBOARD_AVAILABLE = False
+        print("[WARN] keyboard requires elevated permissions:", e)
 
 class LocalASRRecorder:
     """本地离线语音识别器 (基于 Vosk)"""

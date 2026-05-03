@@ -19,9 +19,16 @@ from dashscope.audio.asr import Recognition, RecognitionCallback, RecognitionRes
 try:
     import keyboard
     KEYBOARD_AVAILABLE = True
-except ImportError:
+except Exception as e:
     KEYBOARD_AVAILABLE = False
-    print("提示: keyboard 库未安装，PTT 模式将回退到输入提示方式。")
+    print("[WARN] keyboard not available:", e)
+
+if KEYBOARD_AVAILABLE:
+    try:
+        keyboard.is_pressed('enter')
+    except Exception as e:
+        KEYBOARD_AVAILABLE = False
+        print("[WARN] keyboard requires elevated permissions:", e)
 
 class ASRRecorder:
     """实时语音识别器，提供录音并返回识别文本的功能"""

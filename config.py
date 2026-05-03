@@ -4,7 +4,7 @@ import os
 # 阿里云DashScope API密钥（从环境变量读取，不变）
 DASHSCOPE_API_KEY = os.environ.get('DASHSCOPE_API_KEY')
 if not DASHSCOPE_API_KEY:
-    raise ValueError("请设置环境变量 DASHSCOPE_API_KEY")
+    print("[WARN] DASHSCOPE_API_KEY not set, running in offline mode")
 
 # ASR 录音参数（暂不迁移）
 SAMPLE_RATE = 16000

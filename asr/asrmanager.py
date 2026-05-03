@@ -94,6 +94,12 @@ class ASRManager:
                 result_text = self.local_engine.record_question_ptt()
 
         # --- 核心修改：返回标准的事件格式 ---
+        if not result_text:
+            try:
+                result_text = input("[Fallback Input] Say something: ").strip()
+            except EOFError:
+                result_text = ""
+
         return {
             "type": "user_input",
             "data": {

@@ -1,0 +1,21 @@
+=== RECOMPUTED METRICS (Anti-Fabrication V4) ===
+
+Data Source: C:\Users\lichengjun\Desktop\edge-visionQA\analysis\..\logs\trace.jsonl
+Events: 647
+Unique Task IDs: 418
+
+--- Recomputed from trace.jsonl ---
+max_wait_queue: 12.0
+avg_wait_queue: 3.5
+total_entries: 418
+played: 47
+dropped: 71
+vlm_total: 93
+vlm_played: 27
+valid_pairs: 47
+
+--- Compare with report.json ---
+report.json max_wait_queue: 12.0
+report.json avg_wait_queue: 3.5
+
+Result: PASS

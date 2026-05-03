@@ -251,17 +251,6 @@ class SimulationRunner:
         self.submitted_items.append(item)
         self.per_scene_counts[scenario] += 1
 
-        self.trace_logger.log(
-            "SUBMIT",
-            id=trace_id,
-            source=source,
-            priority=priority,
-            scenario=scenario,
-            user_focus=user_focus,
-            force_play=force_play,
-            text=text,
-        )
-
         self.arbitrator.submit(item, context=self.context)
         if priority <= 1:
             self.arbitrator.mark_decision()
@@ -466,7 +455,7 @@ def schedule_times(duration: float, interval: float) -> set[float]:
 
 
 def main() -> None:
-    output_path = ROOT / "logs" / "full_run.jsonl"
+    output_path = ROOT / "logs" / "trace.jsonl"
     runner = SimulationRunner(output_path)
     runner.run(SCENARIOS)
 

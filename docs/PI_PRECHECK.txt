@@ -5,10 +5,11 @@
 
 本系统是"队列主导（queue-dominant）"的调度系统：
 
-* 所有语音按顺序排队播放，高负载下延迟 2~6 秒
+* 所有语音按顺序排队播放，高负载下延迟 2~12 秒
 * 延迟是排队等待，不是卡死
 * WARNING 零丢失，用户回答最终一定播放
 * 慢 ≠ 异常
+* API 密钥缺失 ≠ 系统崩溃（自动进入离线模式）
 
 
 一、基础环境检查
@@ -22,7 +23,15 @@
     检查方法：python --version 能看到 3.10 或更高
     失败处理：安装 Python 3.10+
 
-[ ] requirements 安装成功
+[ ] 系统依赖已安装
+    检查方法：
+      dpkg -l | grep portaudio19-dev   应找到
+      dpkg -l | grep alsa-utils         应找到
+      which aplay                        应有路径
+    失败处理：
+      sudo apt install portaudio19-dev alsa-utils libsdl2-mixer-2.0-0
+
+[ ] Python 依赖已安装
     检查方法：pip install -r requirements.txt 无报错
     失败处理：重新执行安装命令
 
@@ -30,47 +39,65 @@
 二、配置检查
 ------------------
 
-[ ] 当前配置为 Pi 模式
-    检查方法：cat config/config.yaml | grep "profile:"  应输出 profile: pi
-    失败处理：编辑文件，将 profile 改为 pi
+[ ] Profile 已自动适配
+    检查方法：启动时终端应显示 [MODE] Headless (Pi / no display)
+             若显示 [MODE] Linux GUI mode，说明检测正常但连接了显示器
+    验证方法：cat config/config_pi.yaml | head -5  确认存在且无 pi_sim.enabled: true
 
-[ ] 已关闭模拟模式
-    检查方法：cat config/config_pi.yaml | grep "pi_sim"
-             如果没有这行，或者显示 enabled: false → 通过
-    失败处理：如果显示 enabled: true，改为 false 或删除 pi_sim 段
+[ ] 已关闭模拟模式（重要）
+    检查方法：grep "pi_sim" config/config_pi.yaml
+             如果输出为空，或显示 enabled: false → 通过
+    失败处理：如果有 enabled: true，改为 false 或删除 pi_sim 段
 
-[ ] API 密钥已设置
+[ ] API 密钥（可选，无密钥可离线运行）
     检查方法：echo $DASHSCOPE_API_KEY  应有输出且不为空
-    失败处理：执行 export DASHSCOPE_API_KEY="你的密钥"
+    注意：无密钥 ≠ 系统崩溃，VLM 功能不可用但系统仍运行
+    失败处理（如需VLM）：执行 export DASHSCOPE_API_KEY="你的密钥"
 
 
 三、硬件检查
 ------------------
 
 [ ] 摄像头可用
-    检查方法：python -c "import cv2; c=cv2.VideoCapture(0); print(c.read()[0])"
-             应输出 True
-    失败处理：检查摄像头连接，或改 VideoCapture(0) 的编号为 1
+    检查方法（USB）：python -c "import cv2; c=cv2.VideoCapture(0); print(c.read()[0])"
+                    应输出 True
+    检查方法（CSI）：CAMERA_SRC=csi python -c "
+                      import cv2, os; os.environ['CAMERA_SRC']='csi'
+                      # 或直接测试：
+                      import cv2; c=cv2.VideoCapture('libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink', cv2.CAP_GSTREAMER)
+                      print(c.isOpened())"
+                    应输出 True
+    失败处理：检查摄像头连接，尝试不同 CAMERA_SRC 值
 
 [ ] 麦克风可用
     检查方法：arecord -d 1 test.wav 无报错
     失败处理：检查麦克风连接和 ALSA 配置
+    注意：无麦克风时系统自动降级为 stdin 文字输入，不影响运行
 
 [ ] 音频输出可用
     检查方法：aplay test.wav 无报错
     失败处理：检查音频输出设备（HDMI/3.5mm/I2S）
+    注意：aplay 是系统主要 fallback 播放器，必须可用
 
 
-四、音频依赖检查（Pi 上容易翻车）
+四、Python 音频依赖检查（Pi 上容易翻车）
 ------------------
 
 [ ] pyaudio 可用
     检查方法：python -c "import pyaudio" 无报错
     失败处理：sudo apt install portaudio19-dev && pip install pyaudio
 
-[ ] pygame mixer 可用
+[ ] pygame 可用（可选）
     检查方法：python -c "import pygame; pygame.mixer.init()" 无报错
     失败处理：sudo apt install libsdl2-mixer-2.0-0
+    注意：pygame 不可用时系统自动降级为 aplay 播放，不影响发声
+
+[ ] 模型文件存在
+    检查方法：
+      ls -l yolov8n.pt                           应存在
+      ls -l models/piper/zh_CN-huayan-medium.onnx 应存在
+      ls models/vosk/vosk-model-small-cn-0.22/    目录应存在
+    注意：模型缺失时系统打印 [WARN] 并继续运行，相应功能不可用
 
 
 五、启动前确认
@@ -85,10 +112,10 @@
     失败处理：rm logs/trace.jsonl
 
 [ ] 测试人员已阅读"系统行为说明"（在本文件开头）
-    检查方法：确认已经读过"延迟 2~6 秒属于正常排队"的说明
+    检查方法：确认已经读过"延迟 2~12 秒属于正常排队"的说明
     失败处理：先读完再操作
 
-[ ] 明确"延迟 ≠ 卡死"
+[ ] 明确"慢 ≠ 卡死"、"WARNING ≠ 崩溃"
     检查方法：口头确认理解
     失败处理：不可接受 "超过2秒无回应＝卡了" 的预期
 
@@ -97,8 +124,12 @@
 ------------------
 
 [ ] 显示运行模式信息
-    检查方法：终端出现 [MODE] Headless (Pi / no display)
-    失败处理：停止程序，检查 config/profile 配置
+    检查方法：终端出现 [MODE] Headless (Pi / no display) 或 [MODE] Linux GUI mode
+    失败处理：停止程序，检查是否有异常 [FATAL] 输出
+
+[ ] 无致命错误
+    检查方法：终端不应出现 [FATAL] 字样
+    若出现 [WARN] 字样（模型缺失、API key 未设等）→ 正常，继续
 
 [ ] 有 TRACE 输出
     检查方法：终端持续出现 [TRACE] 开头的行
@@ -108,11 +139,18 @@
     检查方法：另一终端执行 wc -l logs/trace.jsonl，10 秒后再执行一次，数字变大
     失败处理：停止测试，联系负责人
 
+[ ] 日志包含完整生命周期
+    检查方法：
+      grep '"event": "SUBMIT"' logs/trace.jsonl | wc -l   应 > 0
+      grep '"event": "PLAY"' logs/trace.jsonl | wc -l     应 > 0（语音输出后）
+    失败处理：若 SUBMIT 或 PLAY 为 0，确认系统是否正常运行
+
 
 七、禁止事项
 ------------------
 
-不要修改任何代码或配置文件
-不要同时运行其他程序
+不要同时运行其他程序（Pi 性能有限）
+不要拔摄像头或麦克风（运行中）
 不要跳过任何检查步骤
 测试前必须确认本清单全部通过
+不要修改 config 或代码文件（除非负责人指示）

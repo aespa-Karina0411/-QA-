@@ -59,6 +59,13 @@ class SpeechArbitrator:
     def submit(self, item, context=None):
         now = time.time()
         item["enqueue_ts"] = now
+
+        self.trace.log("SUBMIT",
+            id=item.get("trace_id"),
+            source=item.get("source"),
+            priority=item.get("priority", 3),
+            ts=now)
+
         priority = item.get("priority", 3)
         src = item.get("source", "vlm")
         tid = item.get("trace_id", "?")

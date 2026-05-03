@@ -5,14 +5,17 @@
 
 logs/trace.jsonl 用于分析：
 
-* 队列等待时间（wait_queue）
+* 队列等待时间（wait_queue = play_ts - submit_ts）
 * 是否存在饥饿（aging boost 是否触发）
 * 是否存在异常阻塞
+* 全生命周期：SUBMIT → SELECT → PLAY 完整链路
 
 注意：
 * 日志不是用于调试错误
 * 而是用于系统行为分析（调度延迟、队列压力）
 * 日志越满，分析越准确
+* trace 包含 410+ SUBMIT / 47+ PLAY 事件即可进行完整评估
+* trace 可独立交给 PC 端 analysis/ 目录下的评估工具分析
 
 
 1. 日志文件位置
@@ -32,6 +35,12 @@ logs/trace.jsonl
 
 如果行数 > 0 且在增长 → 正常。
 如果行数 = 0 → 停止测试，联系负责人。
+
+同时检查事件类型是否完整：
+  grep '"event": "SUBMIT"' logs/trace.jsonl | wc -l
+  grep '"event": "PLAY"' logs/trace.jsonl | wc -l
+
+两者均应 > 0。若 PLAY = 0 → 系统无语音输出，需排查。
 
 
 3. 测试结束后的操作

@@ -334,11 +334,10 @@ class Controller:
         elif intent_result.intent == IntentType.SCENE_QA:
             response = local_scene_qa(self.context, intent_result.text)
         elif intent_result.intent == IntentType.GENERAL_QA:
+            image = self.context.get("current_image")
             if not CONFIG.get("system.enable_vlm", True):
                 response = "VLM 功能已关闭。"
-            else:
-                image = self.context.get("current_image")
-            if not image:
+            elif not image:
                 response = "当前没有图像可供分析。"
             else:
                 vlm_context = build_vlm_context(self.context)

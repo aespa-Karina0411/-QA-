@@ -1,0 +1,7 @@
+=== SANITY CHECK: Random Sample from trace.jsonl ===
+
+id: st-0377  submit: 1800000151.4999905  play: 1800000156.0  wait_queue: 4.500010s
+id: st-0284  submit: 1800000129.499993  play: MISSING  wait_queue: UNAVAILABLE
+id: st-0358  submit: 1800000144.7999907  play: MISSING  wait_queue: UNAVAILABLE
+id: st-0093  submit: 1800000089.9999993  play: MISSING  wait_queue: UNAVAILABLE
+id: st-0215  submit: 1800000115.0999954  play: MISSING  wait_queue: UNAVAILABLE

@@ -14,6 +14,7 @@ import wave
 import threading
 import tempfile
 import uuid
+import platform
 
 from piper import PiperVoice
 
@@ -25,6 +26,19 @@ try:
 except Exception:
     _PYGAME_AVAILABLE = False
     print("⚠️ pygame 未安装或初始化失败，将使用阻塞播放")
+
+
+def play_audio_file(wav_path):
+    system = platform.system()
+    try:
+        if system == "Windows":
+            os.system(f'start "" "{wav_path}"')
+        else:
+            ret = os.system(f'aplay "{wav_path}"')
+            if ret != 0:
+                print("[WARN] aplay failed, no audio device?")
+    except Exception as e:
+        print("[ERROR] play_audio_file failed:", e)
 
 
 # ========================
@@ -64,14 +78,20 @@ def text_to_wav(text: str, output_path: str):
 # ========================
 def play_audio_blocking(wav_path: str):
     if _PYGAME_AVAILABLE:
-        pygame.mixer.music.load(wav_path)
-        pygame.mixer.music.play()
+        try:
+            pygame.mixer.music.load(wav_path)
+            pygame.mixer.music.play()
+            start = time.time()
+            while pygame.mixer.music.get_busy():
+                if time.time() - start > 10:
+                    print("[WARN] pygame playback timeout")
+                    break
+                time.sleep(0.05)
+            return
+        except Exception as e:
+            print("[WARN] pygame playback failed:", e)
 
-        while pygame.mixer.music.get_busy():
-            continue
-    else:
-        # Windows fallback
-        os.system(f"start {wav_path}")
+    play_audio_file(wav_path)
 
 
 # ========================
@@ -82,10 +102,18 @@ def play_audio_async(wav_path: str):
 
     def _play():
         if _PYGAME_AVAILABLE:
-            pygame.mixer.music.load(wav_path)
-            pygame.mixer.music.play()
-        else:
-            os.system(f"start {wav_path}")
+            try:
+                pygame.mixer.music.load(wav_path)
+                pygame.mixer.music.play()
+                return
+            except Exception as e:
+                print("[WARN] pygame playback failed:", e)
+
+        threading.Thread(
+            target=play_audio_file,
+            args=(wav_path,),
+            daemon=True
+        ).start()
 
     with _lock:
         # 🔴 打断当前播放

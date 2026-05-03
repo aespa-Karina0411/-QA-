@@ -17,7 +17,7 @@ os.makedirs(HISTORY_DIR, exist_ok=True)
 def run_simulate():
     """Step 1: 运行 simulate_log 生成日志"""
     sim = os.path.join(PROJECT_DIR, "tests", "simulate_log.py")
-    out = os.path.join(PROJECT_DIR, "analysis", "full_run.jsonl")
+    trace_out = os.path.join(PROJECT_DIR, "logs", "trace.jsonl")
 
     print("[PIPE] Running simulate_log.py ...")
     result = subprocess.run(
@@ -30,20 +30,18 @@ def run_simulate():
         print(result.stderr[:500])
         sys.exit(1)
 
-    # Copy run_log.json to analysis/full_run.jsonl
+    # DEBUG ONLY — compat log copy, NOT FOR METRICS
+    debug_out = os.path.join(PROJECT_DIR, "analysis", "full_run.jsonl")
     src = os.path.join(PROJECT_DIR, "run_log.json")
     if os.path.exists(src):
         with open(src, "r", encoding="utf-8") as f:
             data = json.load(f)
-        with open(out, "w", encoding="utf-8") as f:
+        with open(debug_out, "w", encoding="utf-8") as f:
             for entry in data:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        print(f"[PIPE] Saved {len(data)} entries to full_run.jsonl")
-    else:
-        print("[PIPE] ERROR: run_log.json not found")
-        sys.exit(1)
+        print(f"[PIPE] DEBUG ONLY: Saved {len(data)} entries to full_run.jsonl")
 
-    return out
+    return trace_out
 
 
 def run_evaluate(log_path):
