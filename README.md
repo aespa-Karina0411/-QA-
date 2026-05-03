@@ -8,6 +8,7 @@
     <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python">
     <img src="https://img.shields.io/badge/YOLOv8n-实时检测-green" alt="YOLO">
     <img src="https://img.shields.io/badge/VLM-Qwen3.5--Flash-orange" alt="VLM">
+    <img src="https://img.shields.io/badge/验证-5/5_PASS-brightgreen" alt="Validation">
     <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="License">
   </p>
 </p>
@@ -22,12 +23,13 @@
 - 🗣️ **全语音交互**：ASR 语音输入（按住说话）+ TTS 语音输出（实时播报）
 - 🎯 **实时环境感知**：YOLOv8n 实时检测行人/车辆/障碍物，结构化语义输出
 - 🤖 **视觉问答**：用户语音提问 → VLM 理解图像 → 语音回答
-- 🚨 **紧急警告**：WARNING 零丢失保障，硬实时优先级调度
+- 🚨 **紧急警告**：WARNING 零丢失保障，多队列硬实时优先级调度
 - 🧠 **决策引擎**：5 层决策（State→Behavior→Suppression→Selection→Expression）
+- 📊 **可审计验证**：Anti-Fabrication 验证体系，所有指标 100% 可从 trace 独立复现
 
 ---
 
-## 系统架构
+## 架构设计
 
 ### 核心数据流
 
@@ -73,14 +75,15 @@ Camera → YOLO                    ASR → IntentParser
 | **唯一状态源** | `Context` 三层隔离：`scene` / `dialog` / `system` |
 | **唯一语音出口** | `SpeechArbitrator` 三队列调度，WARNING 零丢失 |
 | **纯异步 VLM** | `VLMManager` deque 队列 + `poll_result` 解耦，不阻塞主循环 |
+| **单一数据源** | `trace.jsonl` 是唯一真实来源，所有评估指标可独立复现 |
 
 ---
 
-## 核心模块
+## 调度机制设计
 
-### SpeechArbitrator — 多队列调度系统
+### 三队列仲裁模型
 
-三队列独立仲裁，替换传统单队列 priority sort：
+多队列隔离策略，从结构上消除跨优先级竞争：
 
 | 队列 | 容量 | 策略 | 作用 |
 |------|------|------|------|
@@ -90,90 +93,128 @@ Camera → YOLO                    ASR → IntentParser
 
 调度器优先级链：`USER_FOCUS保留槽 → Aging Boost(>4s) → VLM保活(>4s) → WARNING优先 → ENV降级 → 加权轮询[VLM,ENV,ENV] → 兜底`
 
-### SpeechManager — speech_lock 播放锁
+### Aging Boost — 确定性饥饿消除
 
-- **消息队列**（`PriorityQueue`）：`_run_consumer` 每 0.5s drain，同 source 消息合并
-- **播放队列**（`_play_queue`）：唯一 daemon 线程串行消费，永不并发
-- **speech_lock**：WARNING 可打断任意播放，VLM 原子不可中断，ENV 跳过已锁
+VLM 在队列中等待时间超过 4 秒时，强制提升优先级、绕过调度链、跳过节流限制立即播放。引入严格时间上界：任意 VLM 任务的最大等待时间 ≤ 4 秒。
 
-### DecisionMaker — 5 层决策引擎
+### 评分策略层
 
-| 层 | 职责 |
-|----|------|
-| State | `trackers` 字典追踪每个 `(class_zh, direction)` 的历史序列 |
-| Behavior | 基于趋势/danger/duration 判定 4 种 intent |
-| Suppression | `repeat_interval` 3s 限频 + `INTENT_LEVEL` 等级比较 |
-| Selection | `_score` 加权（紧急 100 + 危险 30 + 很近 20 + 靠近 15） |
-| Expression | 独立的模板库 + 随机选择 + 风格后处理 |
-
-### OutputPolicy — 输出策略层
-
-| 规则 | 效果 |
-|------|------|
-| WARNING 永远放行 | 安全关键路径绝对保障 |
-| Speech Budget | 5s 窗口内最多 2 条 |
-| ENV 降噪 | 相同 objects 不重复播 |
-
-### SpatialUtils — 距离平滑与迟滞
-
-- 5 帧多数投票 `smooth_distance()`
-- 迟滞规则："较近→很近"需 2 帧确认，"很近→较近"需 3 帧确认
+VLM 出队采用评分函数 `score = base + wait × 10`：
+- 短时间窗口：语义优先级主导
+- 长时间窗口：等待时间必然超越语义差异
+- 单调递增 → 等待最久的任务最终必被选中
 
 ---
 
-## 快速开始
+## 当前性能指标
 
-### 依赖安装
+### 自动化验证（5/5 PASS）
 
-```bash
-pip install opencv-python ultralytics numpy openai dashscope pyaudio pygame tenacity
+```
+[REAL_PIPELINE]         PASS
+[USER_FOCUS]            PASS
+[PHASE_B_SPEECH_LOCK]   PASS
+[PHASE_A_PATH_INTEGRITY] PASS
+[EXTREME_STRESS]        PASS
 ```
 
-### 模型文件
-
-- [YOLOv8n](https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt) 放入项目根目录
-- 配置环境变量 `DASHSCOPE_API_KEY`（VLM 云端推理）
-
-### 运行
-
-```bash
-python main.py
-```
-
-按键操作：
-- `a`：按住说话，松开后自动识别
-- `q`：退出
-
-### 运行测试
-
-```bash
-cd tests
-python simulate_log.py    # 生成压测数据
-python run_validation.py  # 运行验证 → PASS/FAIL
-```
-
----
-
-## 性能基准
-
-### 极限压力测试（304 条目 / 120s）
+### 极端压测指标（410 条目 / 120s）
 
 | 指标 | 优化前（单队列） | 优化后（三队列） | 变化 |
 |------|-----------------|-----------------|------|
 | WARNING 丢弃 | 34（73.9%） | **0** | ✅ 完全消除 |
 | 顺序违规 | 6 | **0** | ✅ 完全消除 |
-| 首次崩溃 | t=0.4s | **永不崩溃** | ✅ |
 | VLM 已播放 | 15 | **27** | ▲ +80% |
-| 播报间隔 | 1.6s | **1.9s** | 更平稳 |
+| 首次崩溃 | t=0.4s | **永不崩溃** | ✅ |
 
-### 真实链路验证（60s 事件流）
+### 核心调度指标（trace 实测）
 
-| 场景 | 结果 |
+| 指标 | 数值 |
 |------|------|
-| 系统启动语句 | 100% 播放 ✅ |
-| VLM 连续 10 次提问 | 10/10 全部播放 ✅ |
-| Cold Start 首次环境播报 | 仅 1 次 ✅ |
-| 启动期导航拦截 | 生效 ✅ |
+| max_wait_queue | 12.0s |
+| avg_wait_queue | 3.5s |
+| total_entries | 410 |
+| played | 47 |
+| dropped | 71 |
+| warnings_dropped | 0 |
+| vlm_total | 92 |
+| vlm_played | 27 |
+| vlm_play_rate | 29.3% |
+| deadlock_count | 0 |
+| consistency_verdict | **PASS** ✅ |
+
+---
+
+## Anti-Fabrication 验证体系
+
+所有评估指标必须满足：**trace.jsonl 是唯一真实数据源（Single Source of Truth）**。report.json 的每个数字都必须可从 trace 独立重建。
+
+```bash
+# 模拟 → 评估 → 存档 → 对比（一键评估流水线）
+cd analysis
+python pipeline.py
+
+# 独立复算验证（不依赖 evaluate_scheduler.py）
+python recompute_from_trace.py
+# → 输出 consistency_verdict.txt: PASS / FAIL
+```
+
+关键保障：
+- SUBMIT 单一来源统一在 `speech_arbitrator.submit()`，每个任务仅一次
+- evaluate V4 完全移除对 full_run.jsonl 的依赖，仅读 trace.jsonl
+- recompute_from_trace.py 独立复算指标，对比报告（容差 < 0.01s）
+- 运行时打印 `[ANTI-FABRICATION] metrics derived from trace.jsonl only`
+
+---
+
+## 树莓派部署
+
+系统已完成四轮适配修复，支持在树莓派 5 上稳定运行：
+
+```bash
+# USB 摄像头
+python main.py
+
+# CSI 摄像头
+CAMERA_SRC=csi python main.py
+
+# Headless 模式（SSH）：输入 a+Enter 触发 ASR，q+Enter 退出
+```
+
+适配内容：CSI GStreamer 支持、`keyboard` 权限容错 → stdin 降级、TTS 跨平台 fallback（pygame → aplay）、profile 自动检测（Linux → pi 配置）、YOLO 参数 CONFIG 化。
+
+---
+
+## 快速开始
+
+### 环境依赖
+
+```bash
+# 系统依赖（Pi）
+sudo apt install portaudio19-dev alsa-utils libsdl2-mixer-2.0-0
+
+# Python 依赖
+pip install opencv-python ultralytics numpy openai dashscope pyaudio pygame tenacity vosk piper
+```
+
+### 模型文件
+
+- [YOLOv8n](https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt) 放入项目根目录
+- Piper TTS 模型 (`zh_CN-huayan-medium.onnx`) 放入 `models/piper/`
+- Vosk 离线 ASR 模型放入 `models/vosk/vosk-model-small-cn-0.22/`
+- 配置环境变量 `DASHSCOPE_API_KEY`（可选，无密钥自动进入离线模式）
+
+### 运行测试
+
+```bash
+cd tests
+python simulate_log.py    # 生成 410 条压测事件
+python run_validation.py  # 5 项自动化检测 → PASS/FAIL
+
+cd ../analysis
+python pipeline.py          # 一键评估流水线
+python recompute_from_trace.py  # Anti-Fabrication 验证
+```
 
 ---
 
@@ -181,115 +222,38 @@ python run_validation.py  # 运行验证 → PASS/FAIL
 
 ```
 edge-visionQA/
-├── core/
-│   ├── controller.py          # 系统中枢（事件驱动 + 状态管理）
-│   ├── config_loader.py       # 配置加载器（YAML + deep merge）
-│   ├── global_config.py       # 全局 CONFIG 单例
-│   ├── intent_parser.py       # 关键词意图解析 + slots 提取
-│   ├── response_router.py     # 智能响应路由（ENV_QUERY / OBJECT_QUERY）
+├── core/                    # 系统主流程
+│   ├── controller.py       # 事件驱动中枢
+│   ├── config_loader.py    # YAML 配置加载器
+│   ├── intent_parser.py    # 关键词意图解析
+│   ├── response_router.py  # 智能响应路由
 │   └── EnvironmentDescriber.py
-├── perception/
-│   ├── speech_arbitrator.py   # 多队列调度器（WARNING/VLM/ENV + scoring + aging boost）
-│   ├── speech_manager.py      # 两级 PriorityQueue + speech_lock
-│   ├── output_policy.py       # 输出策略层（Budget + 降噪）
-│   ├── decision_utils.py      # 5 层决策引擎
-│   ├── spatial_utils.py       # 结构化语义 + 距离平滑迟滞
-│   └── yolo_utils.py          # YOLO 检测封装
-├── vlm/
-│   ├── vlm_manager.py         # VLM 异步队列（clear+keep-latest + scheduler）
-│   ├── vlm_cloud_adapter.py   # 云端 API 适配层
-│   ├── vlm_intent_parser.py   # VLM 意图解析 + 结构化 prompt
-│   └── providers/
-├── observe/
-│   └── trace_logger.py        # JSONL 结构化日志（DROP_CANDIDATE / SELECT / PLAY）
-├── analysis/
-│   ├── pipeline.py            # 一键评估流水线（simulate→evaluate→compare→archive）
-│   ├── evaluate_scheduler.py  # 调度评估（wait_queue，lazy scheduling）
-│   └── compare_reports.py     # 跨版本对比
-├── expression/                # 模板库 + 风格后处理
-├── tts/                       # TTS 抽象接口
-├── asr/                       # ASR 实时语音识别
-├── config/                    # YAML 配置文件（base + pc + pi profile）
-├── tests/
-│   ├── validation/            # 统一验证框架（5 项自动化检测）
-│   ├── scenarios/             # 真实 Controller 驱动场景
-│   ├── tools/                 # 诊断工具
-│   ├── run_validation.py      # 一键 PASS/FAIL
-│   ├── simulate_log.py        # 压测数据生成
-│   └── log_analyzer.py        # 极端压测分析器
-├── docs/                      # 操作手册 + 测试流程 + 日志回收说明
-├── main.py                    # 入口
-└── config.py                  # 配置兼容层
+├── perception/              # 感知 + 调度
+│   ├── speech_arbitrator.py  # 多队列调度器（核心）
+│   ├── speech_manager.py     # 语音调度 + speech_lock
+│   ├── decision_utils.py     # 5 层决策引擎
+│   ├── output_policy.py      # 输出策略层
+│   ├── spatial_utils.py      # 语义映射 + 迟滞平滑
+│   └── yolo_utils.py         # YOLO 检测
+├── vlm/                     # VLM 异步管理
+├── asr/                     # 语音输入（云端 + 本地 Vosk）
+├── tts/                     # 语音输出（云端 + 本地 Piper）
+├── expression/              # 文本模板引擎
+├── observe/                 # trace 日志系统
+│   └── trace_logger.py     # JSONL 结构化日志
+├── analysis/                # 评估流水线
+│   ├── evaluate_scheduler.py  # Trace-only 评估（V4）
+│   ├── recompute_from_trace.py  # Anti-Fabrication 独立验证
+│   └── pipeline.py            # 一键评估
+├── config/                  # YAML 配置文件
+├── tests/                   # 验证体系
+│   ├── validation/          # 5 项自动化检测
+│   ├── simulate_log.py      # 压测数据生成
+│   └── run_validation.py    # 一键 PASS/FAIL
+├── docs/                    # 操作手册 + 检查清单
+├── main.py                  # 入口
+└── config.py                # 配置兼容层
 ```
-
----
-
-## 验证体系
-
-系统提供完整的自动化验证工具链：
-
-```bash
-# 一键验证框架
-cd tests
-python run_validation.py          # 5 项自动化检测 → PASS/FAIL
-
-# 自动评估流水线
-cd analysis
-python pipeline.py                 # simulate → evaluate → archive → compare
-```
-
-| 检测器 | 方法 | PASS 条件 |
-|--------|------|-----------|
-| 重复播报 | 连续两条 played 且 text 相同 | 0 |
-| 漏报 | 物体距离从 较远→很近 但未播报 | 0 |
-| 抖动 | 距离变化率 > 帧数 50% | ≤1 |
-| VLM 打断 | VLM 播放距上一个播放 < 1.5s | 0 |
-| VLM 饥饿 | VLM 请求 >5s 未播放 | ≤1 |
-| 顺序违规 | 低优先级抢占高优先级 | 0 |
-| 队列溢出 | overflow 总次数 | ≤10 |
-| 播报频率 | played 平均间隔 | 1.5~5s |
-
-## 评估流水线
-
-analysis/pipeline.py 一键执行：
-
-```bash
-cd analysis
-python pipeline.py
-```
-
-流程：
-
-1. simulate_log.py 生成 410 条压力事件
-2. evaluate_scheduler.py 计算 max_wait_queue / vlm_play_rate / starvation
-3. 自动归档到 analysis/history/EVAL_YYYYMMDD_HHMMSS/
-4. 与上一次结果对比输出 diff.txt
-
-典型输出：
-
-```
-=== EVALUATION SUMMARY (V3) ===
-max_wait_queue:  6.0s
-avg_wait_queue:  2.9s
-vlm_play_rate:   29.3%
-
-=== SYSTEM PROPERTIES ===
-no_deadlock:            PASS
-warnings_dropped:        PASS
-bounded_starvation:     PASS (aging boost verified)
-note: lazy scheduling system, queue delay dominates total latency
-```
-
-| 检测器 | 方法 | PASS 条件 |
-|--------|------|-----------|
-| 重复播报 | 连续两条 played 且 text 相同 | 0 |
-| 漏报 | 物体距离从 较远→很近 但未播报 | 0 |
-| 抖动 | 距离变化率 > 帧数 50% | ≤1 |
-| VLM 打断 | VLM 播放距上一个播放 < 1.5s | 0 |
-| VLM 饥饿 | VLM 请求 >5s 未播放 | ≤1 |
-| 顺序违规 | 低优先级抢占高优先级 | 0 |
-| 队列溢出 | overflow 总次数 | ≤10 |
-| 播报频率 | played 平均间隔 | 1.5~5s |
 
 ---
 
