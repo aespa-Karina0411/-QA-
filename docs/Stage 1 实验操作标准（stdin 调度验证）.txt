@@ -1,0 +1,314 @@
+Stage 1 实验操作标准（stdin 调度验证）
+========================================
+
+版本：1.0
+适用对象：实验执行者
+前置要求：无需理解代码，按文档操作即可
+
+
+一、实验目的
+------------
+
+本阶段验证调度系统在"可控输入"下的行为，建立基线性能指标。
+
+核心验证对象：
+
+    SUBMIT → SELECT → PLAY  生命周期是否完整
+
+本阶段要求：
+
+    ✔ 不使用摄像头
+    ✔ 不使用麦克风
+    ✔ 只使用键盘 + 终端输入
+
+关于系统的行为特点（延迟原因、排队模型、异常判断），请先阅读：
+
+    docs/系统行为说明.txt
+
+
+二、实验环境要求
+----------------
+
+最低要求：
+
+    • Python 3.10+ 已安装
+    • 项目代码已拉取到本地
+    • 终端可以运行：python main.py
+
+不需要：
+
+    • 摄像头
+    • 麦克风
+    • GPU
+    • 网络连接
+
+验证环境：
+
+    cd edge-visionQA
+    python --version          # 确认输出 ≥ 3.10
+
+
+三、启动方式
+------------
+
+根据执行平台选择启动方式。
+
+【PC 本地终端】
+    cd edge-visionQA
+    python main.py
+
+    启动后会弹出一个摄像头画面窗口（黑屏），不要关闭它。
+
+【树莓派 SSH 远程】
+    ssh pi@树莓派IP
+    cd ~/edge-visionQA
+    python main.py
+
+    Pi 上不会弹出窗口，终端直接进入 headless 模式。
+
+正常启动后终端应显示：
+
+    系统已启动。按 'a' 开始语音输入，按 'q' 退出。
+
+    以及运行模式：
+    [MODE] Headless (Pi / no display)     ← Pi SSH
+    [MODE] Windows (GUI enabled)          ← PC
+
+可能出现的信息（均属正常，不影响实验）：
+
+    [WARN] camera open failed, fallback to 0
+    [WARN] YOLO model load failed: ...
+    [WARN] TTS model load failed: ...
+    [WARN] DASHSCOPE_API_KEY not set
+
+
+四、交互方式
+------------
+
+根据平台选择操作方式。两种方式的核心流程相同：
+按 'a' → 等提示 → 输入文本 → Enter。
+
+【方式 A：PC 本地终端（有 GUI 窗口）】
+
+    Step 1：点击摄像头画面窗口使其获得焦点，按 'a' 键
+
+    Step 2：切换到终端窗口，等待出现提示：
+
+            [Fallback Input] Say something:
+
+    Step 3：在终端中输入任意文本，按 Enter 提交任务
+
+    退出：在摄像头窗口按 'q' 键
+
+【方式 B：树莓派 SSH（headless 模式）】
+
+    Step 1：在 SSH 终端中输入 a + Enter
+
+    Step 2：等待出现提示：
+
+            [Fallback Input] Say something:
+
+    Step 3：输入任意文本，按 Enter 提交任务
+
+    退出：在终端中输入 q + Enter
+
+说明：
+
+    输入的文本会被系统当作一条"用户提问"处理，
+    触发完整的调度流程（SUBMIT → SELECT → PLAY）。
+
+
+五、实验步骤
+------------
+
+每轮实验请记录：
+    • 开始时间
+    • 输入内容（可选，不强制）
+    • 结束时间
+    • 是否观察到异常
+
+------------------------------------------------------------------
+实验 1：低负载测试  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    每 5 秒执行一轮交互（a → 等提示 → 输入 → Enter），
+    持续 2 分钟，总计约 24 条任务。
+
+    输入内容示例（任选其一，每次换一条）：
+        "帮我看看前面有什么"
+        "右边安全吗"
+        "描述一下环境"
+        "有没有障碍物"
+        "hello"
+        "测试"
+
+目的：
+
+    验证系统在轻负载下稳定运行，建立基线数据。
+
+------------------------------------------------------------------
+实验 2：中负载测试  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    每 2 秒执行一轮交互，持续 2 分钟，总计约 60 条任务。
+
+    输入内容随意，重复允许。
+
+目的：
+
+    观察 wait_queue 在中等负载下的增长趋势，
+    验证调度器是否出现丢任务。
+
+------------------------------------------------------------------
+实验 3：突发负载测试  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    快速连续执行 10 轮交互（每轮间隔不超过 1 秒），
+    然后停止 10 秒，不做任何操作。
+
+    重复上述"10 轮快速 + 10 秒静默"共 3 轮。
+
+目的：
+
+    验证系统在 burst 输入下是否出现堆积或异常，
+    检查停止后队列能否被正常消化。
+
+
+六、日志保存
+------------
+
+每轮实验结束后，系统会在项目目录下生成日志文件：
+
+    logs/trace.jsonl
+
+每轮实验结束后立即执行以下操作（重要，否则下一轮会覆盖日志）：
+
+    # 第一步：在运行机器上重命名并归档
+    cp logs/trace.jsonl logs/stage1_姓名_负载类型.jsonl
+
+    # 示例
+    cp logs/trace.jsonl logs/stage1_zhangsan_low.jsonl
+    cp logs/trace.jsonl logs/stage1_lisi_mid.jsonl
+    cp logs/trace.jsonl logs/stage1_wangwu_burst.jsonl
+
+【如果在树莓派上执行，还需要第二步：传回 PC】
+
+    # 在 PC 终端执行
+    scp pi@树莓派IP:~/edge-visionQA/logs/stage1_zhangsan_low.jsonl ./
+
+【详细日志处理指南】
+
+    日志验证、命名规范、异常情况（文件为空/过小/被覆盖）的处理，
+    详见独立文档：
+
+    docs/日志回收说明.txt
+
+
+七、结果分析
+------------
+
+收集到的 trace 文件可以交给分析人员，或在本地执行以下命令：
+
+7.1 快速指标计算
+
+    python analysis/evaluate_scheduler.py logs/文件名.jsonl
+
+    关注以下指标：
+
+        avg_wait_queue     平均等待时间（越小越好）
+        max_wait_queue     最大等待时间（应 ≤ 15s）
+        warnings_dropped   预警任务丢失数（应为 0）
+        vlm_play_rate      VLM 任务播放率
+        output_rate        总体输出率
+
+7.2 反伪造一致性验证
+
+    cp logs/文件名.jsonl logs/trace.jsonl
+    python analysis/recompute_from_trace.py
+
+    输出 PASS 说明数据可信，输出 FAIL 说明数据异常。
+
+
+八、通过标准
+------------
+
+全部满足以下条件视为通过：
+
+    [1] 程序全程无崩溃退出，无 Fatal 错误
+    [2] logs/trace.jsonl 存在且非空（至少几十 KB）
+    [3] trace 中包含以下事件类型：
+
+        SUBMIT       任务已入队
+        SELECT       任务已被调度选中
+        PLAY         任务已执行
+
+    [4] 不存在"SELECT 但无 PLAY"的悬空任务
+    [5] avg_wait_queue 在合理范围内
+
+        低负载：< 3 秒
+        中负载：< 6 秒
+        突发负载：< 10 秒
+
+    [6] warnings_dropped = 0
+
+如何验证 [3] 和 [4]：
+
+    python -c "import json; events=[json.loads(l) for l in open('logs/trace.jsonl',encoding='utf-8') if l.strip()]; select_ids={e['id'] for e in events if e.get('event')=='SELECT'}; play_ids={e['id'] for e in events if e.get('event')=='PLAY'}; fail_ids={e['id'] for e in events if e.get('event')=='PLAY_FAIL'}; missing=select_ids-play_ids-fail_ids; print(f'SELECT={len(select_ids)}, PLAY={len(play_ids)}, PLAY_FAIL={len(fail_ids)}, MISSING={len(missing)}')"
+
+
+九、注意事项
+------------
+
+必须遵守：
+
+    ❌ 不要同时运行其他占用摄像头或麦克风的程序
+    ❌ 不要修改项目代码
+    ❌ 不要修改 config/ 目录下的配置文件
+    ❌ 不要在实验中途强制关闭终端（请按 'q' 正常退出）
+
+如果程序卡死或出现报错：
+
+    ✔ 记录终端中出现的所有错误信息（截屏或复制）
+    ✔ 记录报错前你执行的操作
+    ✔ 尝试按 'q' 退出，或按 Ctrl+C 终止
+    ✔ 将错误信息提交给负责人
+
+正常现象（无需担心）：
+
+    ✔ 摄像头画面为黑屏（无摄像头时）
+    ✔ 出现 [WARN] 信息
+    ✔ 输入后等待 2-10 秒才有响应（系统在排队调度）
+    ✔ 部分输入没有语音反馈（系统在静默处理中）
+    ✔ 多个响应连续播放（堆积释放）
+
+
+十、常见问题
+------------
+
+Q: 按 'a' 后终端没有出现 "[Fallback Input]" 提示？
+A: 确认摄像头窗口处于焦点状态。有时需要多点一下窗口再按 'a'。
+
+Q: 输入文本后很久没有反应？
+A: 系统可能在等待 VLM 超时（约 8 秒），属正常。等待即可。
+
+Q: 如何确认实验数据有效？
+A: 运行分析命令（见第七节），检查 trace 中 SUBMIT 数量
+   是否接近预期输入次数。
+
+Q: 可以多个人在同一台机器上做实验吗？
+A: 可以，但每次实验前必须关闭之前的程序窗口，
+   并清理 logs/trace.jsonl，否则数据会混合。
+
+
+核心原则
+--------
+
+    本阶段的目标是建立一个可控、可重复的调度行为基线。
+    实验中采集的 trace 数据将作为后续阶段（YOLO、ASR）
+    的对比基准，因此每一轮实验都需确保数据完整可追溯。

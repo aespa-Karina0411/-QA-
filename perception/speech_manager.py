@@ -53,8 +53,12 @@ class SpeechManager:
     # =========================
     def _run_consumer(self):
         while self._running:
-            time.sleep(0.5)
-            self._drain()
+            try:
+                time.sleep(0.5)
+                self._drain()
+            except Exception:
+                import traceback
+                traceback.print_exc()
 
     def _drain(self):
         msgs = self._collect_messages()

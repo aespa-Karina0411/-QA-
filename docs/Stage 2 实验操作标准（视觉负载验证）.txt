@@ -1,0 +1,316 @@
+Stage 2 实验操作标准（视觉负载验证）
+========================================
+
+版本：1.0
+适用对象：实验执行者
+前置要求：已通过 Stage 1，了解系统行为特点
+
+
+一、实验目的
+------------
+
+本阶段引入 YOLO 实时视觉检测，验证调度系统在持续导航事件流下的行为，
+并与 Stage 1 基线进行对比。
+
+核心验证对象：
+
+    • 导航事件（priority=3）持续注入时，系统是否稳定运行
+    • 用户输入（priority=2）是否仍能优先被响应
+    • WARNING（priority=1）是否保持零丢失
+    • wait_queue 相比 Stage 1 的增长幅度
+
+本阶段要求：
+
+    ✔ 摄像头已连接（USB 或 CSI）
+    ✔ 不使用麦克风
+    ✔ 使用键盘 + 终端输入
+
+关于系统的行为特点，请先阅读：
+
+    docs/系统行为说明.txt
+
+
+二、实验环境要求
+----------------
+
+最低要求：
+
+    • Python 3.10+ 已安装
+    • 项目代码已拉取
+    • 摄像头可用（USB 或 CSI）
+    • 已通过 Stage 1（作为基线对比）
+
+不需要：
+
+    • 麦克风
+    • GPU
+    • 网络连接（可选）
+
+平台说明（选择对应配置）：
+
+    [PC + USB 摄像头]
+        直接连接摄像头后运行
+
+    [树莓派 + CSI 摄像头]
+        CSI 摄像头需使用专用启动命令
+
+
+三、启动方式
+------------
+
+根据平台选择。
+
+【PC + USB 摄像头】
+
+    cd edge-visionQA
+    python main.py
+
+    启动后弹出摄像头画面窗口，保持其运行。
+
+【树莓派 + CSI 摄像头】
+
+    ssh pi@树莓派IP
+    cd ~/edge-visionQA
+    CAMERA_SRC=csi python main.py
+
+    树莓派上不会弹出窗口，终端进入 headless 模式。
+
+正常启动后终端应显示：
+
+    系统已启动。按 'a' 开始语音输入，按 'q' 退出。
+
+    以及运行模式：
+    [MODE] Headless (Pi / no display)     ← Pi SSH
+    [MODE] Windows (GUI enabled)          ← PC
+
+以及持续的 trace 输出（说明 YOLO 正在检测）：
+
+    [TRACE][SUBMIT] id=... source=decision priority=3 ...
+    [TRACE][SELECT] id=...
+
+可能出现的信息（均属正常，不影响实验）：
+
+    [WARN] YOLO model load failed: ...
+    [WARN] TTS model load failed: ...
+    [WARN] DASHSCOPE_API_KEY not set
+
+    如果 YOLO 模型加载失败，导航事件不会生成。
+    此时 Stage 2 的行为等同于 Stage 1，实验无法验证视觉负载。
+
+
+四、交互方式
+------------
+
+与 Stage 1 相同。根据平台选择：
+
+【方式 A：PC 本地终端（有 GUI 窗口）】
+
+    Step 1：点击摄像头画面窗口使其获得焦点，按 'a' 键
+    Step 2：切换到终端窗口，等待出现提示：
+
+            [Fallback Input] Say something:
+
+    Step 3：输入任意文本，按 Enter 提交任务
+    退出：在摄像头窗口按 'q' 键
+
+【方式 B：树莓派 SSH（headless 模式）】
+
+    Step 1：在 SSH 终端中输入 a + Enter
+    Step 2：等待出现提示：
+
+            [Fallback Input] Say something:
+
+    Step 3：输入任意文本，按 Enter 提交任务
+    退出：在终端中输入 q + Enter
+
+
+五、实验步骤
+------------
+
+每轮实验请记录：
+    • 开始时间
+    • 结束时间
+    • 摄像头场景描述（拍什么地方，是否有移动物体）
+    • 是否观察到异常
+
+------------------------------------------------------------------
+实验 1：视觉开启 + 不交互  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    1. 启动系统，确保摄像头画面正常
+    2. 不要做任何操作，让系统自动运行 2 分钟
+    3. 观察终端中是否有 [TRACE][SUBMIT] 导航事件持续输出
+    4. 2 分钟后退出程序
+
+目的：
+
+    验证 YOLO 检测是否正常工作，导航事件是否能持续生成。
+    检查系统在纯视觉输入下是否稳定。
+
+预期现象：
+
+    • 终端持续有 [TRACE][SUBMIT] 输出（priority=3 的 navigation 事件）
+    • 部分事件会被 ENV 队列拒绝（[TRACE][DROP] reason=rejected_queue_full）
+    • 部分事件会被节流丢弃（[TRACE][DROP] reason=throttled_drop_env）
+    • 以上均属调度器正常行为
+
+------------------------------------------------------------------
+实验 2：视觉 + 低频 stdin 输入  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    1. 启动系统，确保摄像头画面正常
+    2. 每 5 秒执行一轮交互（a → 等提示 → 输入 → Enter），
+       持续 2 分钟，总计约 24 条任务
+    3. 2 分钟后退出程序
+
+目的：
+
+    与 Stage 1 实验 1 对比：在视觉负载下，avg_wait_queue 是否上升。
+    验证用户输入任务是否仍能正常被调度和执行。
+
+------------------------------------------------------------------
+实验 3：视觉 + 突发 stdin 输入  （预计耗时：3 分钟）
+------------------------------------------------------------------
+
+操作：
+
+    1. 启动系统，确保摄像头画面正常
+    2. 快速连续执行 10 轮交互（每轮间隔不超过 1 秒），
+       然后停止 10 秒，不做任何操作
+    3. 重复上述"10 轮快速 + 10 秒静默"共 3 轮
+    4. 退出程序
+
+目的：
+
+    与 Stage 1 实验 3 对比：在视觉负载 + burst 输入下，
+    队列堆积程度和恢复能力是否有显著差异。
+
+
+六、日志保存
+------------
+
+每轮实验后会生成 logs/trace.jsonl。立即执行：
+
+    # 第一步：重命名归档
+    cp logs/trace.jsonl logs/stage2_姓名_实验类型.jsonl
+
+    # 示例
+    cp logs/trace.jsonl logs/stage2_zhangsan_novisual.jsonl
+    cp logs/trace.jsonl logs/stage2_zhangsan_env.jsonl
+    cp logs/trace.jsonl logs/stage2_zhangsan_low.jsonl
+    cp logs/trace.jsonl logs/stage2_zhangsan_burst.jsonl
+
+    命名规则：stage2_{姓名}_{实验类型}_{日期}.jsonl
+
+    实验类型说明：
+        novisual   实验 1（纯视觉，不交互）
+        env        实验 1 别名
+        low        实验 2（视觉 + 低频 stdin）
+        burst      实验 3（视觉 + 突发 stdin）
+
+【如果在树莓派上执行，需要传回 PC】
+
+    # 在 PC 终端执行
+    scp pi@树莓派IP:~/edge-visionQA/logs/stage2_zhangsan_low.jsonl ./
+
+【详细日志处理指南见】
+
+    docs/日志回收说明.txt
+
+
+七、结果分析
+------------
+
+收集到的 trace 文件在 PC 上分析。
+
+7.1 快速指标计算
+
+    python analysis/evaluate_scheduler.py logs/stage2_xxx.jsonl
+
+    关注以下指标并与 Stage 1 对比：
+
+        avg_wait_queue     Stage 1 应明显低于 Stage 2
+        max_wait_queue     Stage 2 允许比 Stage 1 高 50%
+        warnings_dropped   必须为 0（保持不变）
+        vlm_play_rate      VLM 播放率（应保持稳定）
+        output_rate        输出率（可能因 ENV 丢弃而下降）
+
+7.2 与 Stage 1 的对比表（实验后填写）
+
+    | 指标          | Stage 1 (低负载) | Stage 2 (实验 2) | 变化 |
+    |---------------|-----------------|-----------------|------|
+    | avg_wait_queue|                 |                 |      |
+    | max_wait_queue|                 |                 |      |
+    | warnings_drop | 0               |                 |      |
+
+7.3 反伪造一致性验证
+
+    cp logs/stage2_xxx.jsonl logs/trace.jsonl
+    python analysis/recompute_from_trace.py
+
+
+八、通过标准
+------------
+
+全部满足以下条件视为通过：
+
+    [1] 程序全程无崩溃退出
+    [2] 各轮 trace 文件均存在且非空
+    [3] trace 中包含 SUBMIT / SELECT / PLAY 事件
+    [4] 不存在"SELECT 但无 PLAY"的悬空任务
+    [5] warnings_dropped = 0（与 Stage 1 一致）
+    [6] avg_wait_queue 未出现爆炸式增长（不超过 Stage 1 的 2 倍）
+    [7] 实验 1 中有持续的 [TRACE][SUBMIT] priority=3 输出
+
+如何验证 [4]：
+
+    python -c "import json; events=[json.loads(l) for l in open('logs/trace.jsonl',encoding='utf-8') if l.strip()]; select_ids={e['id'] for e in events if e.get('event')=='SELECT'}; play_ids={e['id'] for e in events if e.get('event')=='PLAY'}; fail_ids={e['id'] for e in events if e.get('event')=='PLAY_FAIL'}; missing=select_ids-play_ids-fail_ids; print(f'SELECT={len(select_ids)}, PLAY={len(play_ids)}, PLAY_FAIL={len(fail_ids)}, MISSING={len(missing)}')"
+
+
+九、注意事项
+------------
+
+必须遵守：
+
+    ❌ 不要同时运行麦克风或其他占用音频的程序
+    ❌ 不要修改项目代码和配置文件
+    ❌ 不要在实验中移动或遮挡摄像头（保证场景稳定）
+
+如果程序卡死或出现报错：
+
+    ✔ 记录终端中出现的所有错误信息
+    ✔ 检查摄像头是否被其他程序占用
+    ✔ 尝试按 'q' 退出，或按 Ctrl+C 终止
+    ✔ 将错误信息提交给负责人
+
+正常现象（无需担心）：
+
+    ✔ 终端中有大量 [TRACE][DROP] 提示（ENV 队列满或节流）
+    ✔ 部分输入后长时间无响应（VLM 超时等待，约 8 秒）
+    ✔ 多个响应连续播放（堆积释放）
+    ✔ 摄像头画面卡顿或延迟（YOLO 推理占用 CPU）
+
+常见问题：
+
+    Q: 摄像头无法打开？
+    A: 确认摄像头未被其他程序占用，尝试不同的 CAMERA_SRC 值。
+       USB 摄像头用默认启动，CSI 摄像头用 CAMERA_SRC=csi。
+
+    Q: 终端没有 [TRACE][SUBMIT] 导航事件？
+    A: 检查 YOLO 模型是否加载成功。若 [WARN] YOLO model load failed，
+       说明模型缺失，需下载 yolo8n.pt 或 yolov8n.pt 到项目根目录。
+
+    Q: 如何判断实验数据有效？
+    A: 运行分析命令，检查 trace 中是否有稳定的 SUBMIT 事件流。
+       实验 1 中 SUBMIT 的 source 应该主要是 "decision"（导航事件）。
+
+
+核心原则
+--------
+
+    本阶段通过引入可控的视觉负载，验证调度器在持续事件流下的稳定性。
+    所有指标需与 Stage 1 基线进行对比分析，以量化视觉负载的影响。

@@ -21,6 +21,14 @@ logs/*.jsonl
 logs/*.json
 run_log.json
 analysis/*.jsonl
+analysis/*.txt
+analysis/report.json
+analysis/full_run_report.json
+analysis/history/
+
+# Private documents
+MID_REPORT_DRAFT.txt
+大创日志.md
 
 # Model files (too large for git)
 *.pt

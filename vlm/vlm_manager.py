@@ -67,18 +67,22 @@ class VLMManager:
 
     def _scheduler_loop(self):
         while True:
-            task = None
-            with self.lock:
-                if self.queue and time.time() - self.last_call_time >= self._scheduler_interval:
-                    task = self.queue.popleft()
-                    self.last_call_time = time.time()
+            try:
+                task = None
+                with self.lock:
+                    if self.queue and time.time() - self.last_call_time >= self._scheduler_interval:
+                        task = self.queue.popleft()
+                        self.last_call_time = time.time()
 
-            if task is None:
-                time.sleep(0.1)
-                continue
+                if task is None:
+                    time.sleep(0.1)
+                    continue
 
-            print("[TRACE] VLM_START_PROCESS")
-            self._run_task(task)
+                print("[TRACE] VLM_START_PROCESS")
+                self._run_task(task)
+            except Exception:
+                import traceback
+                traceback.print_exc()
 
     def _run_task(self, task):
         try:

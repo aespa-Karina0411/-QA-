@@ -227,7 +227,20 @@ class Controller:
         if item.get("source") == "vlm":
             print("[TRACE] VLM_SELECTED_FOR_PLAY id=", item.get("trace_id", "?"))
 
-        if not self.speech.try_play(item):
+        try:
+            success = self.speech.try_play(item)
+        except Exception as e:
+            success = False
+            print(f"[TRACE][PLAY_FAIL] id={item.get('trace_id','?')} reason=exception:{e}")
+            self.arbitrator.trace.log("PLAY_FAIL",
+                id=item.get("trace_id"),
+                reason=f"exception:{e}")
+
+        if not success:
+            print(f"[TRACE][PLAY_FAIL] id={item.get('trace_id','?')} reason=speech_busy")
+            self.arbitrator.trace.log("PLAY_FAIL",
+                id=item.get("trace_id"),
+                reason="speech_busy")
             return
 
         self.arbitrator.trace.log("PLAY",

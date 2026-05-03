@@ -1,9 +1,0 @@
-total: 410
-played: 47 (11.5%)
-dropped: 71
-VLM played: 27/92 (29.3%)
-VLM starved: 65
-max_wait_time: 6.0s
-avg_wait_time: 2.9s
-avg_play_interval: 3.48s
-warnings_dropped: 0
