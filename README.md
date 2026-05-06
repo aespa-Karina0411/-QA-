@@ -27,6 +27,16 @@
 - 🧠 **决策引擎**：5 层决策（State→Behavior→Suppression→Selection→Expression）
 - 📊 **可审计验证**：Anti-Fabrication 验证体系，所有指标 100% 可从 trace 独立复现
 
+### 📖 文档导航
+
+| 文档 | 内容 |
+|------|------|
+| `docs/三阶段实验统一结论与系统行为解释.txt` | **推荐首读**：三阶段统一总结 |
+| `docs/Stage 1 实验报告.md` | 纯调度验证（节流耦合发现） |
+| `docs/Stage 2 实验报告.md` | Controller + USER_FOCUS 验证 |
+| `docs/Stage 3 实验报告（全链路验证）.md` | 真实系统全链路运行 |
+| `docs/系统行为说明.txt` | 系统行为公共参考 |
+
 ---
 
 ## 架构设计
@@ -107,6 +117,16 @@ VLM 出队采用评分函数 `score = base + wait × 10`：
 ---
 
 ## 当前性能指标
+
+### 三阶段验证结果
+
+| 阶段 | navigation存活率 | user_input存活率 | avg_wait |
+|------|-----------------|-----------------|----------|
+| Stage 1 低负载（纯调度） | — | 100% | 0.05s |
+| Stage 2 Controller | 0% | 100% | 0.005s |
+| **Stage 3 真实运行** | **60%** | **35.7%** | **0.1s** |
+
+> Stage 1/2 中节流耦合导致合成输入全部被丢弃；Stage 3 真实 YOLO 连续扰动自然缓解了该耦合，系统在实际环境中可用。详细分析见 `docs/三阶段实验统一结论与系统行为解释.txt`。
 
 ### 自动化验证（5/5 PASS）
 
@@ -207,6 +227,16 @@ pip install opencv-python ultralytics numpy openai dashscope pyaudio pygame tena
 ### 运行测试
 
 ```bash
+# Stage 1：纯调度验证（多轮+CSV）
+python scripts/run_stage1_multi.py
+
+# Stage 2：Controller USER_FOCUS 验证
+python scripts/run_stage2_controller.py
+
+# Stage 3A+：参数扫描
+python scripts/run_stage3a_plus.py
+
+# 传统测试
 cd tests
 python simulate_log.py    # 生成 410 条压测事件
 python run_validation.py  # 5 项自动化检测 → PASS/FAIL
@@ -250,7 +280,20 @@ edge-visionQA/
 │   ├── validation/          # 5 项自动化检测
 │   ├── simulate_log.py      # 压测数据生成
 │   └── run_validation.py    # 一键 PASS/FAIL
-├── docs/                    # 操作手册 + 检查清单
+├── scripts/                 # 自动化实验脚本
+│   ├── run_stage1_direct.py  # Stage 1 纯调度注入
+│   ├── run_stage1_multi.py   # Stage 1 多轮+CSV
+│   ├── run_stage2_controller.py # Stage 2 Controller验证
+│   └── run_stage3a_plus.py   # Stage 3A+ 参数扫描
+├── docs/                    # 文档
+│   ├── Stage 1 实验报告.md
+│   ├── Stage 2 实验报告.md
+│   ├── Stage 3 实验报告（全链路验证）.md
+│   ├── 三阶段实验统一结论与系统行为解释.txt
+│   ├── 系统行为说明.txt       # 公共参考
+│   ├── Stage 1/2/3 操作标准   # 实验操作手册
+│   ├── PI_PRECHECK.txt
+│   └── Pi上机操作手册.txt
 ├── main.py                  # 入口
 └── config.py                # 配置兼容层
 ```

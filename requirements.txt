@@ -2,10 +2,13 @@ dashscope>=1.14.0
 openai>=1.0.0
 pyaudio>=0.2.11
 playsound3>=0.2.0
-opencv-python numpy pillow ultralytics openai dashscope pyaudio playsound3 pygame #摄像头模组
-keyboard #键盘操作模组
+opencv-python
+numpy
+pillow
+ultralytics
 pygame
+keyboard
 tenacity
-opencv-python ultralytics numpy
 piper
 vosk
+PyYAML

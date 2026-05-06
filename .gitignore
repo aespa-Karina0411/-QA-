@@ -19,6 +19,7 @@ venv/
 # Generated data
 logs/*.jsonl
 logs/*.json
+logs/*.csv
 run_log.json
 analysis/*.jsonl
 analysis/*.txt
