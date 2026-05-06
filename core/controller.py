@@ -77,7 +77,7 @@ class Controller:
         # Cold Start: 启动后首次环境播报（仅一次，2s 窗口）
         self.cold_start_active = True
         self.cold_start_env_played = False
-        self.cold_start_start_time = time.time()
+        self.cold_start_start_time = 0.0  # set in _play_startup_message
         self.cold_start_duration = CONFIG.get("cold_start.duration", 2.0)
 
         # 配置驱动的限频控制
@@ -293,6 +293,7 @@ class Controller:
 
         self.startup_played = True
         self.is_startup_phase = False
+        self.cold_start_start_time = time.time()  # 从启动消息播放完毕起算
 
     def _on_user_input_event(self, data: Dict[str, Any], timestamp: float):
         """处理来自语音识别（ASR）的用户意图事件。"""
