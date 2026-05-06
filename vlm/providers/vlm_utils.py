@@ -1,15 +1,8 @@
 # vlm_utils.py 
-import os
-import sys
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-# --- 关键修改：添加父目录到系统路径 ---
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(cur_dir)
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
 
-import config  # 现在可以找到 project/config.py 了
+import config
 
 # 定义重试策略：最多3次，指数退避（2s, 4s, 8s），仅针对网络异常重试
 @retry(

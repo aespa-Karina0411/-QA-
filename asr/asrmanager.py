@@ -4,29 +4,11 @@ import socket
 import sys
 import os
 
-# --- 关键修改：确保能找到父目录的 config 和当前目录的 utils ---
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(cur_dir)
+import config
 
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
-if cur_dir not in sys.path:
-    sys.path.append(cur_dir)
+from .asr_utils import ASRRecorder
+from .asr_local_utils import LocalASRRecorder
 
-import config  # 导入 project/config.py
-
-# 导入同级目录下的模块
-# 注意：如果上面添加了 cur_dir 到 sys.path，直接 import 即可
-try:
-    from asr_utils import ASRRecorder       # 云端实现
-    from asr_local_utils import LocalASRRecorder  # 本地实现
-except ImportError:
-    # 备选方案：如果作为包运行，可能需要加点号，但对于直接运行脚本，上面的 sys.path 更稳妥
-    from .asr_utils import ASRRecorder
-    from .asr_local_utils import LocalASRRecorder
-
-
-# ---- 关键变更：引入 RuntimeManager ----
 from core.runtime_manager import RuntimeManager
 
 

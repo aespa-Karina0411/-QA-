@@ -1,17 +1,9 @@
 # asr_utils.py
-import sys
-import os
 import time
 import threading
 import pyaudio
 
-# --- 关键修改：添加父目录到系统路径 ---
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(cur_dir)
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
-
-import config  # 现在可以找到 project/config.py 了
+import config
 from dashscope.audio.asr import Recognition, RecognitionCallback, RecognitionResult
 
 
