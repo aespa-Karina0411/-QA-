@@ -276,7 +276,7 @@ class Controller:
         if self.startup_played:
             return
 
-        text = "系统已启动。按 A 开始语音输入，按 Q 退出。"
+        text = "系统已启动。"
         trace_id = uuid.uuid4().hex[:6]
         print("[TRACE][STARTUP_TRIGGER]")
         self.arbitrator.trace.log("STARTUP", id=trace_id, ts=time.time())
