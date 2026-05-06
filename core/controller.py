@@ -78,7 +78,7 @@ class Controller:
         self.cold_start_active = True
         self.cold_start_env_played = False
         self.cold_start_start_time = time.time()
-        self.cold_start_duration = 2.0
+        self.cold_start_duration = CONFIG.get("cold_start.duration", 2.0)
 
         # 配置驱动的限频控制
         self._last_decision_time = 0.0
@@ -102,7 +102,7 @@ class Controller:
             "user_focus": {
                 "active": False,
                 "enter_ts": 0.0,
-                "timeout": 5.0,
+                "timeout": CONFIG.get("user_focus.timeout", 5.0),
             },
         })
 
@@ -320,7 +320,7 @@ class Controller:
                 "time": time.time(),
                 "trace_id": trace_id_resp,
             }, context=self.context)
-            self.user_query_active_until = timestamp + 3.0
+            self.user_query_active_until = timestamp + CONFIG.get("user_focus.conversation_window", 3.0)
             self._enter_assistant_mode(reason="user_interaction")
             self.context["dialog"]["last_time"] = timestamp
             self.context["dialog"]["history"].append({"user": text, "assistant": route["text"]})
@@ -336,7 +336,7 @@ class Controller:
                 intent_result.intent = "general_qa"
 
         self.last_user_input_time = timestamp
-        self.user_query_active_until = timestamp + 3.0
+        self.user_query_active_until = timestamp + CONFIG.get("user_focus.conversation_window", 3.0)
         self._enter_assistant_mode(reason="user_interaction")
 
         response = ""
@@ -466,7 +466,8 @@ class Controller:
 
     def _enter_user_focus(self):
         self.context["system"]["user_focus"] = {
-            "active": True, "enter_ts": time.time(), "timeout": 5.0,
+            "active": True, "enter_ts": time.time(),
+            "timeout": CONFIG.get("user_focus.timeout", 5.0),
         }
 
     def _update_user_focus(self):

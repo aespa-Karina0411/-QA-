@@ -19,8 +19,8 @@ class DecisionMaker:
         self.last_broadcast_time = 0
         self.broadcast_interval = CONFIG.get("decision.broadcast_interval", 2.5)
         
-        self.persistence_threshold = 3.0 # 持续 3 秒定义为"持续存在"
-        self.history_limit = 5
+        self.persistence_threshold = CONFIG.get("decision.persistence_threshold", 3.0)
+        self.history_limit = CONFIG.get("decision.history_limit", 5)
 
         self.last_report_time = {}
         self.repeat_interval = CONFIG.get("decision.repeat_interval", 3.0)

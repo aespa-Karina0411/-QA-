@@ -101,7 +101,9 @@ def run():
     controller = Controller(
         spatial_parser=SpatialParserAdapter(),
         decision_maker=DecisionMaker(),
-        speech_manager=SpeechManager(min_interval=2.0, stable_count=3),
+        speech_manager=SpeechManager(
+            min_interval=CONFIG.get("speech.min_interval", 2.0),
+            stable_count=CONFIG.get("speech.stable_count", 3)),
         enable_logging=False,
     )
 
