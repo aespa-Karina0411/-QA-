@@ -179,35 +179,9 @@ class SpeechManager:
     # =========================
     # Controller 接口（签名不变）
     # =========================
-    def update(self, text: str, priority: int = 0) -> bool:
-        """普通播报入口，带稳定帧防抖和限频。"""
-        if not text or not text.strip():
-            return False
+    # update() removed — unused after Phase E (Controller uses try_play)
 
-        with self.lock:
-            self.history_buffer.append(text)
-            if len(self.history_buffer) > self.stable_count:
-                self.history_buffer.pop(0)
-
-            if len(set(self.history_buffer)) != 1:
-                return False
-
-            stable_text = self.history_buffer[0]
-            now = time.time()
-
-            if stable_text == self.last_text:
-                return False
-
-            if priority == 0 and (now - self.last_time < self.min_interval):
-                return False
-
-            msg = SpeechMessage(stable_text, priority, now, "navigation")
-            self.queue.put((-priority, now, msg))
-
-            self.last_text = stable_text
-            self.last_time = now
-            return True
-
+    # DEPRECATED: only used in test scenarios. Do not use in production path.
     def speak_now(self, text: str, priority: int = 1, interrupt: bool = True) -> bool:
         """立即播报入口。"""
         if not text or not text.strip():

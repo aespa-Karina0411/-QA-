@@ -504,23 +504,10 @@ class Controller:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(list(self.logs), f, indent=2, ensure_ascii=False, default=str)
 
-    def get_dialog_history(self):
-        return self.context["dialog"]["history"]
-
     def _invoke_assistant_handler(self, text):
         if not self.assistant_handler:
             return "助手模式已就绪。"
         return self.assistant_handler(text=text, context=self.context)
-
-
-def is_scene_changed(old, new):
-    old_list = old.get("objects", []) if isinstance(old, dict) else old
-    new_list = new.get("objects", []) if isinstance(new, dict) else new
-
-    old_set = {(o["class_zh"], o["direction"]) for o in old_list}
-    new_set = {(o["class_zh"], o["direction"]) for o in new_list}
-
-    return old_set != new_set
 
 
 def build_vlm_context(context):

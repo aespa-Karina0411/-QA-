@@ -5,38 +5,6 @@ from core.global_config import CONFIG
 # 距离等级数值化，用于计算趋势
 DIST_VAL = {"很近": 3, "较近": 2, "较远": 1}
 
-class ExpressionStrategy:
-    """表达策略模块：负责将语义意图转化为自然语言"""
-    
-    @staticmethod
-    def generate(intent: str, data: dict) -> str:
-        direction = data.get("direction", "")
-        obj_name = data.get("class_zh", "")
-        dist = data.get("distance", "")
-        
-        # 策略 1：紧急警告 (High Priority / High Risk)
-        # 特点：省略助词，动词在前，信息密度极高
-        if intent == "EMERGENCY_WARNING":
-            return f"注意！{direction}{obj_name}，{dist}！"
-        
-        # 策略 2：环境描述 (New Objects)
-        # 特点：完整的句式，使用量词，建立空间感
-        elif intent == "ENVIRONMENT_DESC":
-            quantifier = data.get("quantifier", "个")
-            return f"{direction}出现一{quantifier}{obj_name}，距离{dist}。"
-        
-        # 策略 3：状态更新 (Persistent Objects / Trend Change)
-        # 特点：侧重动态变化，忽略重复的位置信息（若已建立认知）
-        elif intent == "STATUS_UPDATE":
-            trend = data.get("trend", "")
-            if trend == "approaching":
-                return f"{direction}{obj_name}正在靠近。"
-            elif trend == "staying":
-                return f"{obj_name}持续存在。"
-            return f"{obj_name}状态变化。"
-        
-        return ""
-
 class DecisionMaker:
     INTENT_LEVEL = {
         "ENVIRONMENT_DESC": 0,
