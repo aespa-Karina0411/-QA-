@@ -43,3 +43,6 @@ Thumbs.db
 
 # Temp
 temp/
+
+# Stage experiment scripts
+scripts/
