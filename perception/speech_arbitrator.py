@@ -94,7 +94,7 @@ class SpeechArbitrator:
             is_warning = priority <= 1
             if not (is_vlm or is_user_direct or is_forced or is_warning):
                 print("[USER_FOCUS_BLOCK]", f"id={tid} source={src}")
-                print("[TRACE] VLM_BLOCKED: reason=USER_FOCUS id=", tid)
+                self.trace.log("DROP", id=tid, reason="user_focus_block")
                 return
 
         item["source_queue"] = {0: "STARTUP", 1: "WARNING", 2: "VLM", 3: "ENV"}.get(priority, "ENV")

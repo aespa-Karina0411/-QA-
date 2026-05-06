@@ -185,9 +185,11 @@ class Controller:
         print("[TRACE] VLM_RESULT_CALLBACK")
         if not answer:
             print("[TRACE] VLM_DROP: empty_answer")
+            self.arbitrator.trace.log("DROP", id=uuid.uuid4().hex[:6], reason="empty_answer", source="vlm")
             return
         if version != self.context["scene"].get("version"):
             print("[TRACE] VLM_DROP: version_mismatch got=", version, "current=", self.context["scene"].get("version"))
+            self.arbitrator.trace.log("DROP", id=uuid.uuid4().hex[:6], reason="version_mismatch", source="vlm")
             return
 
         if is_fallback:
@@ -261,6 +263,7 @@ class Controller:
         text = "系统已启动。按 A 开始语音输入，按 Q 退出。"
         trace_id = uuid.uuid4().hex[:6]
         print("[TRACE][STARTUP_TRIGGER]")
+        self.arbitrator.trace.log("STARTUP", id=trace_id, ts=time.time())
         print("[TRACE][SUBMIT]", f"id={trace_id} source=startup priority=0 text={text[:30]}")
 
         self.arbitrator.submit({
@@ -279,7 +282,8 @@ class Controller:
         """处理来自语音识别（ASR）的用户意图事件。"""
         text = data.get("text", "")
         print("[USER_INPUT]", text)
-        print("[TRACE] USER_QUERY received:", text)
+        tid = uuid.uuid4().hex[:6]
+        self.arbitrator.trace.log("USER_QUERY", id=tid, ts=time.time(), text=text[:50])
 
         self._enter_user_focus()
 
