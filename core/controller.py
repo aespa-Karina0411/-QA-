@@ -435,7 +435,7 @@ class Controller:
         print("[TRACE][SUBMIT]", f"id={tid} source=decision priority={arb_priority} text={text[:30]}")
         self.arbitrator.submit({
             "text": text, "source": "decision", "priority": arb_priority,
-            "time": time.time(), "trace_id": trace_id,
+            "time": time.time(), "trace_id": tid,
             "bypass_throttle": decision.get("bypass_throttle", False),
             "is_cold_start_env": decision.get("is_cold_start_env", False),
             "force_play": decision.get("force_play", False),

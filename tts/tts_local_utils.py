@@ -10,6 +10,7 @@ tts_local_utils.py
 """
 
 import os
+import time
 import wave
 import threading
 import tempfile
@@ -159,7 +160,6 @@ def speak(text: str, async_mode: bool = True):
     # background cleanup
     def _cleanup(path):
         try:
-            import time
             time.sleep(3)
             if os.path.exists(path):
                 os.remove(path)
