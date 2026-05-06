@@ -25,6 +25,7 @@
 - 🤖 **视觉问答**：用户语音提问 → VLM 理解图像 → 语音回答
 - 🚨 **紧急警告**：WARNING 零丢失保障，多队列硬实时优先级调度
 - 🧠 **决策引擎**：5 层决策（State→Behavior→Suppression→Selection→Expression）
+- 🧭 **导航导引**：基于物体方向的距离感知避让建议，含危险物分级提醒
 - 📊 **可审计验证**：Anti-Fabrication 验证体系，所有指标 100% 可从 trace 独立复现
 
 ### 📖 文档导航
