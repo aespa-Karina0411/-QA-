@@ -39,7 +39,7 @@ user_focus:
   conversation_window: 3.0   # 对话优先级窗口 (s)
 
 cold_start:
-  duration: 2.0              # 冷启动窗口 (s)
+  duration: 5.0              # 冷启动窗口 (s), 需覆盖启动消息播放 (~2.5s) + YOLO 预热
 
 yolo:
   conf_threshold: 0.5
