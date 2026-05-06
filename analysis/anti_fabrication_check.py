@@ -3,8 +3,7 @@ import json
 import random
 import os
 
-BASE = os.path.dirname(os.path.abspath(__file__)).replace("\\analysis", "") if "\\analysis" not in os.path.abspath(__file__) else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = r"C:\Users\lichengjun\Desktop\edge-visionQA"
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 trace_path = os.path.join(BASE, "logs", "trace.jsonl")
 report_path = os.path.join(BASE, "analysis", "report.json")
 analysis_dir = os.path.join(BASE, "analysis")

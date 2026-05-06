@@ -325,13 +325,7 @@ class SpeechArbitrator:
     # ==================================================================
     # Controller 接口（保持不变）
     # ==================================================================
-    def can_play_vlm(self):
-        now = time.time()
-        normal = now - self.last_decision_time >= 1.0
-        force = now - self.last_vlm_play_time > self._vlm_force_interval
-        user_window = now - self.last_user_query_time < 3.0
-        vlm_survival = now - self.last_vlm_play_time > self._vlm_survival_force
-        return normal or force or user_window or vlm_survival
+    # can_play_vlm() removed — unused after Phase D select_next() migration
 
     def mark_decision(self):
         self.last_decision_time = time.time()

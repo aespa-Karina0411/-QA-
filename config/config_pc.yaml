@@ -1,7 +1,7 @@
 # PC 开发环境 — 仅覆盖差异字段
 
 speech:
-  min_interval: 1.0          # PC 开发: 降低间隔便于调试
+  min_interval: 2.0          # matching production default
 
 logging:
   enable: true                # PC 开发: 开启日志
