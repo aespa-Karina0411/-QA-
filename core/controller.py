@@ -394,7 +394,13 @@ class Controller:
 
     def _route_speech_decision(self, decision, timestamp):
         if not decision or not decision.get("should_speak"):
+            # check for decision-layer suppress reason
+            reason = decision.get("suppress_reason") if decision else None
+            if reason:
+                tid = uuid.uuid4().hex[:6]
+                self.arbitrator.trace.log("SUPPRESS", id=tid, stage="decision", reason=reason)
             return {"spoken": False}
+        tid = uuid.uuid4().hex[:6]
         if self.navigation_muted:
             return {"spoken": False, "reason": "muted"}
         priority = decision.get("priority", 0)
@@ -417,15 +423,16 @@ class Controller:
                 current_objects = scene_objects.get("objects", [])
             else:
                 current_objects = scene_objects if isinstance(scene_objects, list) else []
-            if not self.output_policy.allow({
+            allowed, reason = self.output_policy.allow({
                 "text": text, "priority": arb_priority, "source": "decision",
                 "objects": current_objects,
                 "bypass_policy": decision.get("bypass_policy", False),
                 "is_cold_start_env": decision.get("is_cold_start_env", False),
-            }):
+            })
+            if not allowed:
+                self.arbitrator.trace.log("SUPPRESS", id=tid, stage="policy", reason=reason or "output_policy")
                 return {"spoken": False, "reason": "suppressed_by_output_policy"}
-        trace_id = uuid.uuid4().hex[:6]
-        print("[TRACE][SUBMIT]", f"id={trace_id} source=decision priority={arb_priority} text={text[:30]}")
+        print("[TRACE][SUBMIT]", f"id={tid} source=decision priority={arb_priority} text={text[:30]}")
         self.arbitrator.submit({
             "text": text, "source": "decision", "priority": arb_priority,
             "time": time.time(), "trace_id": trace_id,

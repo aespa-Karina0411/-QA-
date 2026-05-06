@@ -13,34 +13,34 @@ class OutputPolicy:
         self.window = CONFIG.get("speech.speech_budget_window", 5.0)
         self.max_speech = CONFIG.get("speech.speech_budget_max", 2)
 
-    def allow(self, item: dict) -> bool:
+    def allow(self, item: dict) -> tuple:
         """
         item: {text, priority, source, objects(optional)}
-        返回 True 表示允许播放，False 表示抑制。
+        Returns (allowed: bool, reason: str|None)
         """
         # Bypass: 启动语句、冷启动环境播报等特殊路径直接放行
         if item.get("bypass_policy") or item.get("is_cold_start_env"):
-            return True
+            return True, None
 
         now = time.time()
 
         # 1. WARNING 永远允许
         if item.get("priority") == 1:
-            return True
+            return True, None
 
         # 2. Speech Budget：窗口内最多 max_speech 条
         self._cleanup(now)
         if len(self.last_speech_time) >= self.max_speech:
-            return False
+            return False, "budget_exceeded"
 
         # 3. ENV 降噪：相同场景不重复
         if item.get("source") == "decision":
             if not self._is_significant(item):
-                return False
+                return False, "env_noise"
 
         # 4. 通过 → 记录时间
         self.last_speech_time.append(now)
-        return True
+        return True, None
 
     def _cleanup(self, now):
         self.last_speech_time = [

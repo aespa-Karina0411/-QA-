@@ -17,10 +17,6 @@ class SpeechArbitrator:
         self.trace = _trace_logger
         self._warn_max = CONFIG.get("arbitrator.warning_queue_max", 3)
         self._vlm_max = CONFIG.get("arbitrator.vlm_queue_max", 5)
-        # Pi Simulation: 队列压缩
-        import config as _cfg
-        if _cfg.SIMULATE_PI:
-            self._vlm_max = _cfg.SIMULATED_MAX_VLM_QUEUE_SIZE
         self._env_max = CONFIG.get("arbitrator.env_queue_max", 3)
         self._vlm_timeout = CONFIG.get("arbitrator.vlm_timeout", 8.0)
         self._vlm_survival = CONFIG.get("arbitrator.vlm_survival_interval", 4.0)
@@ -143,7 +139,8 @@ class SpeechArbitrator:
 
     def _push_vlm(self, item):
         if len(self.vlm_queue) >= self._vlm_max:
-            self.vlm_queue.pop(0)
+            evicted = self.vlm_queue.pop(0)
+            self.trace.log("DROP", id=evicted.get("trace_id", "?"), reason="vlm_fifo_eviction")
         self.vlm_queue.append(item)
 
     def _push_env(self, item):

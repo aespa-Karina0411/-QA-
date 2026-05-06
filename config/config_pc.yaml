@@ -7,5 +7,4 @@ logging:
   enable: true                # PC 开发: 开启日志
 
 pi_sim:
-  enabled: true
-  mode: normal
+  enabled: false

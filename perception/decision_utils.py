@@ -61,6 +61,7 @@ class DecisionMaker:
         now = time.time()
         current_objects = env_data.get("objects", [])
         report_items = []
+        suppress_reason = None
 
         # 1. 更新追踪器与意图判定
         active_keys = []
@@ -82,6 +83,7 @@ class DecisionMaker:
                 # ENV 降噪：非危险 + 距离远 → 抑制
                 if not obj.get("is_danger") and dist_score <= 1:
                     intent = None
+                    suppress_reason = suppress_reason or "env_noise"
             else:
                 tracker = self.trackers[key]
                 tracker["history"].append(dist_score)
@@ -104,17 +106,20 @@ class DecisionMaker:
                     tracker["reported_intents"].add("STATUS_UPDATE")
                 else:
                     intent = None # 暂无显著变化，抑制播报
+                    suppress_reason = suppress_reason or "no_change"
                 
                 tracker["last_dist"] = dist_score
 
             if intent:
                 last_time = self.last_report_time.get(key, 0)
                 if now - last_time < self.repeat_interval:
+                    suppress_reason = suppress_reason or "repeat_interval"
                     continue
                 tracker = self.trackers[key]
                 last_level = self.INTENT_LEVEL.get(tracker.get("last_intent"), -1)
                 current_level = self.INTENT_LEVEL.get(intent, -1)
                 if current_level <= last_level:
+                    suppress_reason = suppress_reason or "low_intent_level"
                     continue
                 obj["trend"] = obj.get("trend", "")
                 report_items.append({
@@ -130,7 +135,7 @@ class DecisionMaker:
 
         # 3. 冲突与频率控制
         if not report_items:
-            return {"text": "", "should_speak": False}
+            return {"text": "", "should_speak": False, "suppress_reason": suppress_reason or "no_object"}
 
         def _score(item):
             obj = item["obj"]
