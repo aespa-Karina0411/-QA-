@@ -51,6 +51,7 @@ class Controller:
         self.vlm_manager = vlm_manager or VLMManager()
         self.expression = ExpressionEngine()
         self.arbitrator = SpeechArbitrator()
+        self.vlm_manager.trace = self.arbitrator.trace
         self.enable_logging = enable_logging
         self.enable_output_policy = True          # 输出策略开关（可回滚）
         self.output_policy = OutputPolicy()

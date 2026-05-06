@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import threading
 import time
+import uuid
 from collections import deque
 from typing import Optional
 
@@ -21,6 +22,7 @@ class VLMManager:
     def __init__(self, cloud_adapter: Optional[VLMCloudAdapter] = None) -> None:
         self.cloud_adapter = cloud_adapter or VLMCloudAdapter()
         self.lock = threading.Lock()
+        self.trace = None
 
         self.queue = deque()
         self.result_queue = deque()
@@ -46,6 +48,8 @@ class VLMManager:
                 self.queue.clear()
             elif len(self.queue) >= self._max_queue:
                 if CONFIG.get("vlm.drop_when_full", True):
+                    if self.trace:
+                        self.trace.log("DROP", id=uuid.uuid4().hex[:6], reason="vlm_queue_full")
                     print("[TRACE] VLM_DROP: queue_full")
                     return
                 else:
