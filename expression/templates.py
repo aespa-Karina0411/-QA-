@@ -25,7 +25,7 @@ TEMPLATES = {
 
     "ENVIRONMENT_DESC_GUIDED": [
         "{direction}有{class_zh}，建议稍向{avoid_dir}移动",
-        "{direction}出现{class_zh}，可以向{avoid_dir}稍微"
+        "{direction}出现{class_zh}，可以稍向{avoid_dir}移动"
     ],
 
     "ENVIRONMENT_DESC_GUIDED_DANGER": [
