@@ -108,14 +108,14 @@ class SpeechArbitrator:
         # ---- VLM 超时检查 ----
         if src == "vlm":
             if now - item["time"] > self._vlm_timeout:
-                print("[TRACE][DROP]", f"id={tid} reason=expired")
+                self.trace.log("DROP", id=tid, reason="expired")
                 print("[TRACE] VLM_DROP: expired id=", tid)
                 return
 
         # ---- ENV 速率限制 ----
         if priority == 3:
             if now - self.last_accept_time < self._env_rate_limit:
-                print("[TRACE][DROP]", f"id={tid} reason=rejected_rate_limit")
+                self.trace.log("DROP", id=tid, reason="rate_limit")
                 return
             self.last_accept_time = now
 
@@ -128,7 +128,7 @@ class SpeechArbitrator:
             self._push_vlm(item)
         elif priority == 3:
             if len(self.env_queue) >= self._env_max:
-                print("[TRACE][DROP]", f"id={tid} reason=rejected_queue_full(env)")
+                self.trace.log("DROP", id=tid, reason="queue_full")
                 return
             self._push_env(item)
 
@@ -256,16 +256,16 @@ class SpeechArbitrator:
                 item["_throttled_once"] = True
                 self.vlm_queue.insert(0, item)
                 tid = item.get("trace_id", "?")
-                print("[TRACE][DROP]", f"id={tid} reason=throttled_requeue")
+                self.trace.log("REQUEUE", id=tid, reason="throttle")
             else:
                 tid = item.get("trace_id", "?")
-                print("[TRACE][DROP]", f"id={tid} reason=throttled_drop")
+                self.trace.log("DROP", id=tid, reason="throttle")
                 print("[TRACE] VLM_BLOCKED: reason=throttled id=", tid)
             return None                     # VLM delayed
 
         # prio == 3
         tid = item.get("trace_id", "?")
-        print("[TRACE][DROP]", f"id={tid} reason=throttled_drop_env")
+        self.trace.log("DROP", id=tid, reason="throttle_env")
         return None                         # ENV dropped
 
     def _pop_warning(self):
