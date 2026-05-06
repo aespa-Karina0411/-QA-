@@ -69,9 +69,9 @@
     注意：无麦克风时系统自动降级为 stdin 文字输入，不影响运行
 
 [ ] 音频输出可用
-    检查方法：aplay test.wav 无报错
-    失败处理：检查音频输出设备（HDMI/3.5mm/I2S）
-    注意：aplay 是系统主要 fallback 播放器，必须可用
+     检查方法：aplay test.wav 无报错；若 aplay 不可用则尝试 paplay test.wav
+     失败处理：检查音频输出设备（HDMI/3.5mm/I2S）
+     注意：aplay 是系统主要 fallback 播放器（其次 paplay），至少一台可用
 
 
 四、Python 音频依赖检查（Pi 上容易翻车）

@@ -28,14 +28,9 @@ export DASHSCOPE_API_KEY="你的阿里云API密钥"
 
 
 2. 选择 Pi 配置
---------------
+-------------
 系统在 Linux 上会自动检测并使用 Pi profile（config_pi.yaml）。
 config/config.yaml 中的 profile 项作为后备，通常无需手动修改。
-
-确认 config/config_pi.yaml 中没有以下内容：
-  pi_sim:
-    enabled: true
-（如果有，删除这两行）
 
 如需强制指定 profile：
   export EDGE_VISION_PROFILE=pi
