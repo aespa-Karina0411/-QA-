@@ -128,6 +128,18 @@ VLM 出队采用评分函数 `score = base + wait × 10`：
 
 > Stage 1/2 中节流耦合导致合成输入全部被丢弃；Stage 3 真实 YOLO 连续扰动自然缓解了该耦合，系统在实际环境中可用。详细分析见 `docs/三阶段实验统一结论与系统行为解释.txt`。
 
+### 工程收敛状态
+
+系统完成 E1 工程收敛，达到"工程可控"标准：
+
+| 维度 | 状态 |
+|------|------|
+| 可观测性 | **PASS** — 所有 DROP/SUPPRESS 事件带 reason 进入 trace.jsonl |
+| 可解释性 | **PASS** — 任意未播放行为可追溯到完整因果链 |
+| 配置有效性 | **PASS** — 关键参数由 `config.yaml` 单一控制 |
+| 线程安全 | **PASS** — speech_lock 受 mutex 保护 |
+| 生产路径纯净性 | **PASS** — SIMULATE_PI 代码已移除 |
+
 ### 自动化验证（5/5 PASS）
 
 ```
@@ -224,23 +236,13 @@ pip install opencv-python ultralytics numpy openai dashscope pyaudio pygame tena
 - Vosk 离线 ASR 模型放入 `models/vosk/vosk-model-small-cn-0.22/`
 - 配置环境变量 `DASHSCOPE_API_KEY`（可选，无密钥自动进入离线模式）
 
-### 运行测试
-
 ```bash
-# Stage 1：纯调度验证（多轮+CSV）
-python scripts/run_stage1_multi.py
-
-# Stage 2：Controller USER_FOCUS 验证
-python scripts/run_stage2_controller.py
-
-# Stage 3A+：参数扫描
-python scripts/run_stage3a_plus.py
-
-# 传统测试
+# 运行测试
 cd tests
 python simulate_log.py    # 生成 410 条压测事件
 python run_validation.py  # 5 项自动化检测 → PASS/FAIL
 
+# 评估与验证
 cd ../analysis
 python pipeline.py          # 一键评估流水线
 python recompute_from_trace.py  # Anti-Fabrication 验证
@@ -280,20 +282,10 @@ edge-visionQA/
 │   ├── validation/          # 5 项自动化检测
 │   ├── simulate_log.py      # 压测数据生成
 │   └── run_validation.py    # 一键 PASS/FAIL
-├── scripts/                 # 自动化实验脚本
-│   ├── run_stage1_direct.py  # Stage 1 纯调度注入
-│   ├── run_stage1_multi.py   # Stage 1 多轮+CSV
-│   ├── run_stage2_controller.py # Stage 2 Controller验证
-│   └── run_stage3a_plus.py   # Stage 3A+ 参数扫描
 ├── docs/                    # 文档
-│   ├── Stage 1 实验报告.md
-│   ├── Stage 2 实验报告.md
-│   ├── Stage 3 实验报告（全链路验证）.md
 │   ├── 三阶段实验统一结论与系统行为解释.txt
-│   ├── 系统行为说明.txt       # 公共参考
-│   ├── Stage 1/2/3 操作标准   # 实验操作手册
-│   ├── PI_PRECHECK.txt
-│   └── Pi上机操作手册.txt
+│   ├── Stage 1/2/3 实验报告
+│   └── Stage 1/2/3 操作标准
 ├── main.py                  # 入口
 └── config.py                # 配置兼容层
 ```
