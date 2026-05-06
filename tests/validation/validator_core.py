@@ -89,7 +89,7 @@ def run_all_validations():
             capture_output=True, timeout=60,
         )
         from log_analyzer import LogAnalyzer
-        analyzer = LogAnalyzer("run_log.json")
+        analyzer = LogAnalyzer(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "run_log.json"))
         analyzer.detect_repetition()
         analyzer.detect_vlm_starvation()
         analyzer.compute_starvation_rate()
@@ -126,6 +126,18 @@ def run_all_validations():
     except Exception as e:
         vr = ValidationResult("EXTREME_STRESS")
         vr.fail(str(e))
+        results.append(vr)
+
+    # 4. Phase E1: DROP coverage + trace completeness
+    try:
+        from validation.phaseE1_drop_coverage import (
+            validate_drop_coverage, validate_trace_completeness
+        )
+        results.append(validate_drop_coverage())
+        results.append(validate_trace_completeness())
+    except Exception as e:
+        vr = ValidationResult("E1_COVERAGE")
+        vr.fail(f"exception: {e}")
         results.append(vr)
 
     return results
