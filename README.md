@@ -204,21 +204,9 @@ python recompute_from_trace.py
 
 ---
 
-## 树莓派部署
+## 树莓派适配
 
-系统已完成四轮适配修复，支持在树莓派 5 上稳定运行：
-
-```bash
-# USB 摄像头
-python main.py
-
-# CSI 摄像头
-CAMERA_SRC=csi python main.py
-
-# Headless 模式（SSH）：输入 a+Enter 触发 ASR，q+Enter 退出
-```
-
-适配内容：CSI GStreamer 支持、`keyboard` 权限容错 → stdin 降级、TTS 跨平台 fallback（pygame → aplay）、profile 自动检测（Linux → pi 配置）、YOLO 参数 CONFIG 化。
+系统已针对树莓派 5 完成四轮 14 项适配修复：CSI GStreamer 支持、`keyboard` 权限容错 → stdin 降级、TTS 跨平台 fallback（pygame → aplay → paplay）、profile 自动检测（Linux → `config_pi.yaml`）、YOLO 参数可配置。Pi 部署前请先阅读 `docs/PI_PRECHECK.txt`。
 
 ---
 
@@ -227,7 +215,7 @@ CAMERA_SRC=csi python main.py
 ### 环境依赖
 
 ```bash
-# 系统依赖（Pi）
+# 系统依赖（树莓派必需）
 sudo apt install portaudio19-dev alsa-utils libsdl2-mixer-2.0-0
 
 # Python 依赖
@@ -239,18 +227,38 @@ pip install opencv-python ultralytics numpy pillow openai dashscope pyaudio play
 - [YOLOv8n](https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt) 放入项目根目录
 - Piper TTS 模型 (`zh_CN-huayan-medium.onnx`) 放入 `models/piper/`
 - Vosk 离线 ASR 模型放入 `models/vosk/vosk-model-small-cn-0.22/`
-- 配置环境变量 `DASHSCOPE_API_KEY`（可选，无密钥自动进入离线模式）
+- 配置环境变量 `DASHSCOPE_API_KEY`（可选，无密钥自动离线运行）
+
+### 启动系统
 
 ```bash
-# 运行测试
-cd tests
-python simulate_log.py    # 生成 410 条压测事件
-python run_validation.py  # 5 项自动化检测 → PASS/FAIL
+# USB 摄像头（默认）
+python main.py
 
-# 评估与验证
+# CSI 摄像头（树莓派）
+CAMERA_SRC=csi python main.py
+
+# Headless（SSH）：输入 a+Enter 触发语音识别，q+Enter 退出
+```
+
+交互方式：按 `a` → 等待 `[Fallback Input]` → 输入提问 → Enter。
+
+---
+
+## 开发与验证
+
+以下工具在 PC 开发环境使用，无需部署到树莓派。
+
+```bash
+# 压力测试
+cd tests
+python simulate_log.py        # 生成 410 条合成事件
+python run_validation.py      # 7 项自动化检测
+
+# 评估流水线
 cd ../analysis
-python pipeline.py          # 一键评估流水线
-python recompute_from_trace.py  # Anti-Fabrication 验证
+python pipeline.py             # 一键：模拟→评估→存档→对比
+python recompute_from_trace.py # Anti-Fabrication 独立验证
 ```
 
 ---
