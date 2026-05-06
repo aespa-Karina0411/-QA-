@@ -4,6 +4,7 @@ import random
 
 from expression.style import STYLE_RULES
 from expression.templates import TEMPLATES
+from expression.navigation_advisor import suggest_avoid_direction
 
 
 class ExpressionEngine:
@@ -15,19 +16,32 @@ class ExpressionEngine:
         if intent == "STATUS_UPDATE" and obj.get("trend") == "approaching":
             intent = "APPROACHING"
 
+        # 导航语义升级：对 ENVIRONMENT_DESC 和 APPROACHING 生成避让建议
+        direction = obj.get("direction", "")
+        distance = obj.get("distance", "")
+        avoid_dir = ""
+        if intent in ("ENVIRONMENT_DESC", "APPROACHING"):
+            avoid_dir = suggest_avoid_direction(direction, distance)
+            if avoid_dir:
+                intent = f"{intent}_GUIDED"
+
         templates = TEMPLATES.get(intent, [])
         if not templates:
             return ""
 
         template = random.choice(templates)
 
-        text = template.format(
-            direction=obj.get("direction", ""),
-            class_zh=obj.get("class_zh", ""),
-            distance=obj.get("distance", "")
-        )
+        kwargs = {
+            "direction": direction,
+            "class_zh": obj.get("class_zh", ""),
+            "distance": distance,
+        }
+        if avoid_dir:
+            kwargs["avoid_dir"] = avoid_dir
 
-        if intent in STYLE_RULES:
-            text = STYLE_RULES[intent](text)
+        text = template.format(**kwargs)
+
+        if intent.rstrip("_GUIDED") in STYLE_RULES:
+            text = STYLE_RULES[intent.rstrip("_GUIDED")](text)
 
         return text

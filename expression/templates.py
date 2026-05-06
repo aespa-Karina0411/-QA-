@@ -13,9 +13,19 @@ TEMPLATES = {
         "{direction}有{class_zh}向你接近"
     ],
 
+    "APPROACHING_GUIDED": [
+        "{direction}{class_zh}正在靠近，建议稍向{avoid_dir}移动",
+        "{direction}有{class_zh}向你接近，注意{avoid_dir}方向"
+    ],
+
     "ENVIRONMENT_DESC": [
         "{direction}有{class_zh}",
         "{direction}出现{class_zh}"
+    ],
+
+    "ENVIRONMENT_DESC_GUIDED": [
+        "{direction}有{class_zh}，建议稍向{avoid_dir}移动",
+        "{direction}发现{class_zh}，可以向{avoid_dir}避让"
     ],
 
     "STATUS_UPDATE": [
