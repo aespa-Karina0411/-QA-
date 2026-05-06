@@ -231,6 +231,7 @@ class SpeechArbitrator:
         if item is not None:
             item = self._apply_throttle(item, bypass=bypass_throttle)
             if item is not None:
+                self.last_play_time = time.time()
                 tid = item.get("trace_id", "?")
                 src = item.get("source", "?")
                 print("[TRACE][SELECT]", f"id={tid} source={src}")
@@ -270,7 +271,6 @@ class SpeechArbitrator:
     def _pop_warning(self):
         item = self.warning_queue.pop(0)
         self.last_decision_time = time.time()
-        self.last_play_time = time.time()
         return item
 
     def _pop_vlm(self):
@@ -284,7 +284,6 @@ class SpeechArbitrator:
                 tid = item.get("trace_id", "?")
                 print(f"[TRACE][VLM_FORCE_SELECT] id={tid}")
                 self.last_vlm_play_time = now
-                self.last_play_time = now
                 return item
 
         best = None
@@ -314,12 +313,10 @@ class SpeechArbitrator:
                 score=round(best_score, 0),
                 aging=bool(best.get("aging_boost")))
         self.last_vlm_play_time = now
-        self.last_play_time = now
         return best
 
     def _pop_env(self):
         item = self.env_queue.pop(0)
-        self.last_play_time = time.time()
         return item
 
     # ==================================================================
