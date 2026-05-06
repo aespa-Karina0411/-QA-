@@ -123,10 +123,9 @@ def run():
             if not ret:
                 continue
 
-            controller.context["current_image"] = encode_frame_as_data_url(frame.copy())
-
             frame_count += 1
             if frame_count % detect_interval == 0:
+                controller.context["current_image"] = encode_frame_as_data_url(frame.copy())
                 conf = CONFIG.get("yolo.conf_threshold", 0.5)
                 imgsz = CONFIG.get("yolo.imgsz", 320)
                 objects = yolo_utils.detect_objects(frame, conf_threshold=conf, imgsz=imgsz)

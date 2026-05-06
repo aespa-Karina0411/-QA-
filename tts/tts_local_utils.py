@@ -25,7 +25,7 @@ try:
     _PYGAME_AVAILABLE = True
 except Exception:
     _PYGAME_AVAILABLE = False
-    print("⚠️ pygame 未安装或初始化失败，将使用阻塞播放")
+    print("[WARN] pygame not available, falling back to blocking playback")
 
 
 def play_audio_file(wav_path):
@@ -36,7 +36,9 @@ def play_audio_file(wav_path):
         else:
             ret = os.system(f'aplay "{wav_path}"')
             if ret != 0:
-                print("[WARN] aplay failed, no audio device?")
+                ret2 = os.system(f'paplay "{wav_path}"')
+                if ret2 != 0:
+                    print("[WARN] aplay and paplay both failed, no audio device?")
     except Exception as e:
         print("[ERROR] play_audio_file failed:", e)
 
@@ -55,9 +57,9 @@ _lock = threading.Lock()
 def load_tts_model(model_path: str):
     global _voice
     if _voice is None:
-        print(f"🔊 正在加载TTS模型: {model_path}")
+        print("[INFO] Loading TTS model:", model_path)
         _voice = PiperVoice.load(model_path)
-        print("✅ TTS模型加载完成")
+        print("[INFO] TTS model loaded")
     return _voice
 
 
@@ -67,7 +69,7 @@ def load_tts_model(model_path: str):
 def text_to_wav(text: str, output_path: str):
     voice = _voice
     if voice is None:
-        raise RuntimeError("❌ 请先调用 load_tts_model()")
+        raise RuntimeError("[ERROR] load_tts_model() must be called first")
 
     with wave.open(output_path, "wb") as wav_file:
         voice.synthesize_wav(text, wav_file)
@@ -116,7 +118,7 @@ def play_audio_async(wav_path: str):
         ).start()
 
     with _lock:
-        # 🔴 打断当前播放
+        # interrupt current playback
         if _PYGAME_AVAILABLE and pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
 
@@ -154,7 +156,7 @@ def speak(text: str, async_mode: bool = True):
     else:
         play_audio_blocking(tmp_path)
 
-    # 🧹 后台删除文件
+    # background cleanup
     def _cleanup(path):
         try:
             import time
