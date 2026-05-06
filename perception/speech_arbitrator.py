@@ -55,6 +55,7 @@ class SpeechArbitrator:
 
     # ==================================================================
     # 入队（submit）
+    # THREAD: main only
     # ==================================================================
     def submit(self, item, context=None):
         now = time.time()
@@ -152,6 +153,7 @@ class SpeechArbitrator:
 
     # ==================================================================
     # 调度器核心：select_next（带节流门控）
+    # THREAD: main only
     # ==================================================================
     def select_next(self):
         now = time.time()

@@ -47,10 +47,12 @@ class SpeechManager:
             "owner": None,
             "can_interrupt": True,
         }
+        self._play_lock = threading.Lock()  # protects speech_lock dict
 
     # =========================
     # 后台消费者
     # =========================
+    # THREAD: daemon
     def _run_consumer(self):
         while self._running:
             try:
@@ -102,6 +104,7 @@ class SpeechManager:
         print(f"[TRACE][SPEAK_START] text={text[:30]}")
         self._play_queue.put((0 if interrupt else 1, time.time(), (text, interrupt)))
 
+    # THREAD: daemon
     def _player_loop(self):
         while self._running:
             try:
@@ -117,26 +120,29 @@ class SpeechManager:
 
     # =========================
     # Phase B: speech_lock — 防重叠 + WARNING打断 + VLM原子
+    # THREAD: main only
     # =========================
     def _can_play(self, item):
-        src = item.get("source")
-        priority = item.get("priority", 3)
-        is_warning = (priority <= 1)
+        with self._play_lock:
+            src = item.get("source")
+            priority = item.get("priority", 3)
+            is_warning = (priority <= 1)
 
-        if not self.speech_lock["active"]:
+            if not self.speech_lock["active"]:
+                return True
+
+            if is_warning:
+                print("[LOCK] WARNING interrupt")
+                return True
+
+            if not self.speech_lock["can_interrupt"]:
+                print("[LOCK BLOCK]", src)
+                print("[TRACE] VLM_BLOCKED: reason=lock_active src=", src)
+                return False
+
             return True
 
-        if is_warning:
-            print("[LOCK] WARNING interrupt")
-            return True
-
-        if not self.speech_lock["can_interrupt"]:
-            print("[LOCK BLOCK]", src)
-            print("[TRACE] VLM_BLOCKED: reason=lock_active src=", src)
-            return False
-
-        return True
-
+    # THREAD: main only
     def try_play(self, item):
         """带锁保护的播放入口。WARNING 可打断，VLM 原子不可中断。"""
         if not self._can_play(item):
@@ -145,9 +151,10 @@ class SpeechManager:
         src = item.get("source")
         is_vlm = (src == "vlm")
 
-        self.speech_lock["active"] = True
-        self.speech_lock["owner"] = src
-        self.speech_lock["can_interrupt"] = not is_vlm
+        with self._play_lock:
+            self.speech_lock["active"] = True
+            self.speech_lock["owner"] = src
+            self.speech_lock["can_interrupt"] = not is_vlm
 
         try:
             self._play_lock_acquired(item)
