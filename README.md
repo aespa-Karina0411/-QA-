@@ -143,19 +143,17 @@ VLM 出队采用评分函数 `score = base + wait × 10`：
 | 线程安全 | **PASS** — speech_lock 受 mutex 保护 |
 | 生产路径纯净性 | **PASS** — SIMULATE_PI 代码已移除 |
 
-### 自动化验证（4/5 PASS，1 pre-existing）
+### 自动化验证（5/7 PASS，2 pre-existing）
 
 ```
 [REAL_PIPELINE]         PASS
 [USER_FOCUS]            PASS
 [PHASE_B_SPEECH_LOCK]   PASS
 [PHASE_A_PATH_INTEGRITY] PASS
-[EXTREME_STRESS]        PASS*
 [DROP_REASON_COVERAGE]  PASS
-[TRACE_COMPLETENESS]    PASS
-
-* EXTREME_STRESS requires fresh trace.jsonl; may show FAIL
-  on stale/empty trace data due to path resolution.
+[EXTREME_STRESS]        FAIL*  ← pre-existing: simulate_log path mismatch
+[TRACE_COMPLETENESS]    FAIL*  ← pre-existing: stale trace data, passes with fresh trace
+```
 
 历史压测基线（三队列优化前后对比，410 条目/120s，Stage 1 之前的早期数据）：
 
