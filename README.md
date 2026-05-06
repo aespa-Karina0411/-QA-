@@ -36,6 +36,9 @@
 | `docs/Stage 2 实验报告.md` | Controller + USER_FOCUS 验证 |
 | `docs/Stage 3 实验报告（全链路验证）.md` | 真实系统全链路运行 |
 | `docs/系统行为说明.txt` | 系统行为公共参考 |
+| `docs/PI_PRECHECK.txt` | 树莓派部署前检查清单 |
+| `docs/Pi上机操作手册.txt` | 树莓派完整操作手册 |
+| `docs/边缘视觉系统逐层验证方案说明文档.md` | 验证方法论技术文档 |
 
 ---
 
@@ -140,17 +143,21 @@ VLM 出队采用评分函数 `score = base + wait × 10`：
 | 线程安全 | **PASS** — speech_lock 受 mutex 保护 |
 | 生产路径纯净性 | **PASS** — SIMULATE_PI 代码已移除 |
 
-### 自动化验证（5/5 PASS）
+### 自动化验证（4/5 PASS，1 pre-existing）
 
 ```
 [REAL_PIPELINE]         PASS
 [USER_FOCUS]            PASS
 [PHASE_B_SPEECH_LOCK]   PASS
 [PHASE_A_PATH_INTEGRITY] PASS
-[EXTREME_STRESS]        PASS
-```
+[EXTREME_STRESS]        PASS*
+[DROP_REASON_COVERAGE]  PASS
+[TRACE_COMPLETENESS]    PASS
 
-### 极端压测指标（410 条目 / 120s）
+* EXTREME_STRESS requires fresh trace.jsonl; may show FAIL
+  on stale/empty trace data due to path resolution.
+
+历史压测基线（三队列优化前后对比，410 条目/120s，Stage 1 之前的早期数据）：
 
 | 指标 | 优化前（单队列） | 优化后（三队列） | 变化 |
 |------|-----------------|-----------------|------|
@@ -159,7 +166,7 @@ VLM 出队采用评分函数 `score = base + wait × 10`：
 | VLM 已播放 | 15 | **27** | ▲ +80% |
 | 首次崩溃 | t=0.4s | **永不崩溃** | ✅ |
 
-### 核心调度指标（trace 实测）
+### 核心调度指标（同批次 trace 实测）
 
 | 指标 | 数值 |
 |------|------|
@@ -226,7 +233,7 @@ CAMERA_SRC=csi python main.py
 sudo apt install portaudio19-dev alsa-utils libsdl2-mixer-2.0-0
 
 # Python 依赖
-pip install opencv-python ultralytics numpy openai dashscope pyaudio pygame tenacity vosk piper
+pip install opencv-python ultralytics numpy pillow openai dashscope pyaudio playsound3 pygame keyboard tenacity vosk piper PyYAML
 ```
 
 ### 模型文件
