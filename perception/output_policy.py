@@ -2,6 +2,7 @@
    在 Decision → Arbitrator 之间插入，不影响调度内核。"""
 
 import time
+from core.global_config import CONFIG
 
 
 class OutputPolicy:
@@ -9,8 +10,8 @@ class OutputPolicy:
     def __init__(self):
         self.last_objects = None
         self.last_speech_time = []
-        self.window = 5.0
-        self.max_speech = 2
+        self.window = CONFIG.get("speech.speech_budget_window", 5.0)
+        self.max_speech = CONFIG.get("speech.speech_budget_max", 2)
 
     def allow(self, item: dict) -> bool:
         """

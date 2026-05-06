@@ -1,5 +1,6 @@
 import time
 from collections import defaultdict
+from core.global_config import CONFIG
 
 # 距离等级数值化，用于计算趋势
 DIST_VAL = {"很近": 3, "较近": 2, "较远": 1}
@@ -48,13 +49,13 @@ class DecisionMaker:
         # 核心存储：{ (类别, 方向): { "history": [], "first_seen": ts, "reported_intents": set() } }
         self.trackers = {}
         self.last_broadcast_time = 0
-        self.broadcast_interval = 2.5  # 基础播报频率
+        self.broadcast_interval = CONFIG.get("decision.broadcast_interval", 2.5)
         
-        self.persistence_threshold = 3.0 # 持续 3 秒定义为“持续存在”
+        self.persistence_threshold = 3.0 # 持续 3 秒定义为"持续存在"
         self.history_limit = 5
 
         self.last_report_time = {}
-        self.repeat_interval = 3.0
+        self.repeat_interval = CONFIG.get("decision.repeat_interval", 3.0)
 
     def get_decision(self, env_data: dict) -> dict:
         now = time.time()
