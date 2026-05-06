@@ -100,12 +100,13 @@ class VLMManager:
             messages = []
 
             # 1. System instruction (always)
+            sys_text = "你是盲人视觉助手，请根据图片内容以最简洁的语言回答用户的问题，回答避免出现'图片中'等措辞。"
+            recent = context.get("recent_scene", "")
+            if recent:
+                sys_text += " " + recent
             messages.append({
                 "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": "你是盲人视觉助手，请根据图片内容以最简洁的语言回答用户的问题，回答避免出现'图片中'等措辞。",
-                }],
+                "content": [{"type": "text", "text": sys_text}],
             })
 
             # 2. History (text only)

@@ -90,6 +90,7 @@ class Controller:
             "last_update": None,
             "version": 0,
             "state": "unstable",
+            "recent_objects": [],
         })
         self.context.setdefault("dialog", {
             "history": [],
@@ -159,6 +160,21 @@ class Controller:
             self.context["dialog"]["history"].clear()
             self.context["dialog"]["last_time"] = None
             print("[Context] Scene changed → reset dialog")
+            # 短时场景记忆：记录最近出现过的物体（用于 VLM 上下文）
+            scene = self.context["scene"]
+            for obj in new_scene:
+                scene["recent_objects"].append({
+                    "class_zh": obj.get("class_zh", ""),
+                    "direction": obj.get("direction", ""),
+                    "distance": obj.get("distance", ""),
+                    "ts": time.time(),
+                })
+            # 清理超过 30 秒的旧记录
+            now = time.time()
+            scene["recent_objects"] = [
+                o for o in scene["recent_objects"]
+                if now - o["ts"] <= 30
+            ]
             decision = self.decision_maker.get_decision(self.context["scene"]["objects"])
 
             # Cold Start: 首次环境播报绕过所有限制
@@ -514,7 +530,23 @@ class Controller:
 def build_vlm_context(context):
     env_data = context["scene"]["objects"] or {}
     objects = env_data if isinstance(env_data, list) else env_data.get("objects", [])
+    # 短时场景记忆：最近30秒出现过的物体，去重取前3
+    recent = context["scene"].get("recent_objects", [])
+    if recent:
+        seen = set()
+        recent_summary = []
+        for o in sorted(recent, key=lambda x: x["ts"], reverse=True):
+            key = (o["class_zh"], o["direction"])
+            if key not in seen:
+                seen.add(key)
+                recent_summary.append(f"{o['direction']}的{o['class_zh']}")
+                if len(recent_summary) >= 3:
+                    break
+        recent_text = "最近环境中出现过：" + "、".join(recent_summary)
+    else:
+        recent_text = ""
     return {
         "objects": objects,
-        "recent_events": context["dialog"]["history"][-3:]
+        "recent_events": context["dialog"]["history"][-3:],
+        "recent_scene": recent_text,
     }
