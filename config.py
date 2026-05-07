@@ -15,7 +15,7 @@ BLOCK_SIZE = 3200
 # 从新配置系统读取，fallback 到硬编码默认
 from core.global_config import CONFIG
 
-VLM_MODEL = CONFIG.get("vlm.model", "qwen3.5-flash")
+VLM_MODEL = CONFIG.get("vlm.model", "qwen3.6-flash")
 VLM_BASE_URL = CONFIG.get("vlm.base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 
 TTS_MODEL = CONFIG.get("tts.model", "cosyvoice-v1")

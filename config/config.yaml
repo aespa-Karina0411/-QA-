@@ -56,7 +56,7 @@ vlm:
   max_queue: 1               # VLM 请求队列容量 (1=只保留最新)
   drop_when_full: true       # 队列满时丢弃新请求
   simulate_delay: 0.0        # 模拟延迟 (s), 0=禁用
-  model: qwen3.5-flash
+  model: qwen3.6-flash
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
 
 tts:

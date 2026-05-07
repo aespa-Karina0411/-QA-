@@ -7,7 +7,7 @@
   <p align="center">
     <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python">
     <img src="https://img.shields.io/badge/YOLOv8n-实时检测-green" alt="YOLO">
-    <img src="https://img.shields.io/badge/VLM-Qwen3.5--Flash-orange" alt="VLM">
+    <img src="https://img.shields.io/badge/VLM-Qwen3.6--Flash-orange" alt="VLM">
     <img src="https://img.shields.io/badge/验证-5/5_PASS-brightgreen" alt="Validation">
     <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="License">
   </p>
