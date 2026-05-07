@@ -142,11 +142,9 @@ def speak(text: str, async_mode: bool = True):
     if not text.strip():
         return
 
-    # 临时文件
-    tmp_path = os.path.join(
-        tempfile.gettempdir(),
-        f"tts_{uuid.uuid4().hex}.wav"
-    )
+    # 临时文件 — Linux 用 /dev/shm 避免 SD 卡写入损耗
+    tmp_dir = "/dev/shm" if platform.system() != "Windows" else tempfile.gettempdir()
+    tmp_path = os.path.join(tmp_dir, f"tts_{uuid.uuid4().hex}.wav")
 
     # 生成语音
     text_to_wav(text, tmp_path)
