@@ -1,7 +1,7 @@
 edge-visionQA 项目技术手册
 ============================
 
-面向：未参与开发、需要真正理解系统的项目成员
+面向：需要真正理解系统的项目成员
 阅读时间：完整阅读约 2 小时，可分段阅读
 目标：读完能接入开发，能做答辩发言人
 
@@ -316,6 +316,14 @@ ASR 模式决策：通过 RuntimeManager 的网络探测结果决定用 cloud �
 - 播放链: pygame.mixer → aplay → paplay（三层 fallback）
 - 异步播放 + 打断机制（新播放自动终止旧播放）
 - 自动清理临时 wav 文件
+- Pi 优化：Linux 下临时文件写入 `/dev/shm`（RAM disk）而非 `/tmp`（SD 卡），减少 SD 卡写入损耗。Windows 保持原路径。一键迁移，调度无影响。<｜end▁of▁thinking｜><｜end▁of▁thinking｜>更新`tts_local_utils.py`（TTS临时目录改为`/dev/shm`），补写大创日志，并将此优化同步到项目技术手册和中期报告。
+代码改动已完成并本地提交，现在将三个文档同步更新。<｜end▁of▁thinking｜>同时更新项目技术手册和中期报告。
+我先在技术手册的TTS说明中添加`/dev/shm`优化点，然后在报告的性能路径修复段落中补充TTS临时文件优化。
+
+<｜｜DSML｜｜tool_calls>
+<｜｜DSML｜｜invoke name="edit">
+<｜｜DSML｜｜parameter name="newString" string="true">- 自动清理临时 wav 文件
+- Pi 优化：Linux 下临时文件写入 `/dev/shm`（RAM disk）而非 `/tmp`（SD 卡），减少 SD 卡写入损耗。Windows 保持原路径。一键迁移，调度无影响。
 
 3.11 expression/ (表达层，约 100 行)
 
