@@ -100,10 +100,10 @@ class VLMManager:
             messages = []
 
             # 1. System instruction (always)
-            sys_text = "你是盲人视觉助手，请根据图片内容以最简洁的语言回答用户的问题，回答避免出现'图片中'等措辞。"
+            sys_text = "你是盲人视觉助手。直接以一句话口语回答用户问题，不加标题、序号、括号。禁止使用'图片''画面''图像''根据'等词汇。"
             recent = context.get("recent_scene", "")
             if recent:
-                sys_text += " " + recent
+                sys_text += " 最近你在环境中看到过：" + recent[len("最近环境中出现过："):] if recent.startswith("最近") else recent
             messages.append({
                 "role": "user",
                 "content": [{"type": "text", "text": sys_text}],
