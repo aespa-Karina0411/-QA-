@@ -39,7 +39,9 @@ def play_audio_file(wav_path):
             if ret != 0:
                 ret2 = os.system(f'paplay "{wav_path}"')
                 if ret2 != 0:
-                    print("[WARN] aplay and paplay both failed, no audio device?")
+                    ret3 = os.system(f'pw-play "{wav_path}"')
+                    if ret3 != 0:
+                        print("[WARN] aplay, paplay and pw-play all failed, no audio device?")
     except Exception as e:
         print("[ERROR] play_audio_file failed:", e)
 

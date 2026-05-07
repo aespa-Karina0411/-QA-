@@ -4,6 +4,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 import config
 
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = OpenAI(
+            api_key=config.DASHSCOPE_API_KEY,
+            base_url=config.VLM_BASE_URL,
+            timeout=15.0,
+        )
+    return _client
+
 # 定义重试策略：最多3次，指数退避（2s, 4s, 8s），仅针对网络异常重试
 @retry(
     stop=stop_after_attempt(3),
@@ -36,11 +49,7 @@ def ask_visual_model(question=None, base64_image=None, mime_type=None, messages=
     api_key = api_key or config.DASHSCOPE_API_KEY
     model = model or config.VLM_MODEL
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url=config.VLM_BASE_URL,
-        timeout=15.0  # 显式设置超时时间，防止无限挂起
-    )
+    client = _get_client()
     
 
     if messages is None:
