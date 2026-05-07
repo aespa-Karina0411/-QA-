@@ -69,7 +69,7 @@ class RuntimeManager:
         )
 
     # ── 网络：底层检测（只在后台线程中执行）──────────────
-    def _probe_network(self, host: str = "8.8.8.8", port: int = 53) -> bool:
+    def _probe_network(self, host: str = "dashscope.aliyuncs.com", port: int = 443) -> bool:
         try:
             socket.setdefaulttimeout(self._network_timeout)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:

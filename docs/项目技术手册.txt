@@ -368,9 +368,19 @@ explicit 参数 → EDGE_VISION_PROFILE 环境变量 → config.yaml 的 profile
 3.15 core/runtime_manager.py (运行时管理，约 150 行)
 
 网络探测 + 模块运行模式决策：
-- 每 5s 探测 8.8.8.8:53 是否可达
+- 每 5s 探测 `dashscope.aliyuncs.com:443` 是否可达（业务端点，非 DNS）
 - ASR 策略: prefer_cloud（在线用云端，离线用本地 Vosk）
 - 单例模式，线程安全
+
+3.16 Pi 部署专项优化
+
+针对树莓派 5 的硬件特性进行的工程优化，均不影响调度行为和 trace 结构：
+
+- **TraceLogger 内存 buffer**：将逐条文件写入改为 20 条或 2 秒间隔的 buffer flush，SD 卡写入量从每秒数十次降至每 2 秒一次，消除 SD 卡高频随机写入损耗。
+- **TTS 音频三层 fallback**：`aplay → paplay → pw-play` 覆盖 ALSA/PulseAudio/PipeWire 全 Linux 音频栈，确保 Pi OS Bookworm+ 的 PipeWire 默认环境不出现静默播放失败。
+- **OpenAI client 复用**：VLM 云端调用的 httpx 客户端改为模块级单例，复用 TLS session，每次 VLM 请求节省 100-300ms 握手开销。
+- **TTS 临时文件 `/dev/shm`**：Linux 下临时 wav 文件写入 RAM disk 而非 SD 卡 `/tmp`，减少 SD 卡写入损耗。
+- **网络探测端点修正**：从 `8.8.8.8:53`（DNS 端口）改为 `dashscope.aliyuncs.com:443`（业务端点），避免校园网/企业网封锁 DNS 53 导致系统误判为离线。
 
 
 第四部分：系统行为关键机制

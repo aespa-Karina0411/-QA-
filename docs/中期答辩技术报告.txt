@@ -287,7 +287,7 @@ Anti-Fabrication验证已通过：recompute_from_trace.py独立复算指标与re
 
 在配置系统方面，将decision_utils的persistence_threshold和history_limit，output_policy的budget_window和max_speech，Controller的user_focus.timeout/conversation_window/cold_start.duration，main.py的min_interval/stable_count共8个参数从硬编码改为CONFIG.get()（保留fallback默认值），config.yaml中未被消费的键从28%降至约15%。
 
-在线程安全方面，为6个关键方法标注THREAD边界（main only / daemon），speech_lock的读写临界区加入threading.Lock保护。在性能关键路径上，main.py的JPEG+base64编码从每帧改为仅YOLO检测帧执行，tts_local_utils.py增加paplay fallback覆盖PulseAudio场景，TTS临时wav文件在Linux下改为写入/dev/shm（RAM disk）减少树莓派SD卡写入损耗。
+在线程安全方面，为6个关键方法标注THREAD边界（main only / daemon），speech_lock的读写临界区加入threading.Lock保护。在性能关键路径上，main.py的JPEG+base64编码从每帧改为仅YOLO检测帧执行，tts_local_utils.py增加paplay/pw-play三层fallback覆盖ALSA/PulseAudio/PipeWire全音频栈，TTS临时wav文件在Linux下改为写入/dev/shm（RAM disk）减少树莓派SD卡写入损耗。此外完成了VLM云端接口OpenAI client的模块级复用（避免每次调用TLS握手开销）和runtime_manager.py网络探测端点的修正（从DNS 53端口改为业务端点443端口，避免防火墙误判离线）。
 
 在验证体系方面，新增DROP_REASON_COVERAGE和TRACE_COMPLETENESS两个验证器，确认所有DROP事件必有reason字段、所有SUBMIT事件必有对应outcome。工程结构上删除了asr/和vlm/providers/共4个文件的sys.path.append hack，改为标准import。累计删除死代码83行（含ExpressionStrategy类、is_scene_changed/get_dialog_history函数、speech_manager.update方法、can_play_vlm方法），标记speak_now为deprecated仅保留测试运行。
 
