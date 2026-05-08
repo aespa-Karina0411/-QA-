@@ -81,6 +81,9 @@ def run():
             "libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink",
             cv2.CAP_GSTREAMER
         )
+        if not cap.isOpened():
+            print("[WARN] GStreamer CSI failed, trying V4L2 device 0")
+            cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     else:
         cap = cv2.VideoCapture(int(camera_src))
     if not cap.isOpened():

@@ -53,15 +53,15 @@
 ------------------
 
 [ ] 摄像头可用
-    检查方法（USB）：python -c "import cv2; c=cv2.VideoCapture(0); print(c.read()[0])"
-                    应输出 True
-    检查方法（CSI）：CAMERA_SRC=csi python -c "
-                      import cv2, os; os.environ['CAMERA_SRC']='csi'
-                      # 或直接测试：
-                      import cv2; c=cv2.VideoCapture('libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink', cv2.CAP_GSTREAMER)
-                      print(c.isOpened())"
-                    应输出 True
-    失败处理：检查摄像头连接，尝试不同 CAMERA_SRC 值
+     检查方法（USB / V4L2）：python -c "import cv2; c=cv2.VideoCapture(0, cv2.CAP_V4L2); print(c.isOpened())"
+                     应输出 True
+     检查方法（CSI）：CAMERA_SRC=csi python -c "
+                       import cv2, os; os.environ['CAMERA_SRC']='csi';
+                       c=cv2.VideoCapture('libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink', cv2.CAP_GSTREAMER);
+                       print(c.isOpened())"
+                     若输出 False 但 rpicam-hello -t 0 能打开摄像头，
+                     说明 GStreamer 不兼容，直接用 CAMERA_SRC=0 启动项目（Pi 5 将 CSI 识别为 V4L2 的 0 号设备）。
+     失败处理：检查摄像头连接，尝试不同 CAMERA_SRC 值
 
 [ ] 麦克风可用
     检查方法：arecord -d 1 test.wav 无报错
@@ -69,9 +69,10 @@
     注意：无麦克风时系统自动降级为 stdin 文字输入，不影响运行
 
 [ ] 音频输出可用
-     检查方法：aplay test.wav 无报错；若 aplay 不可用则尝试 paplay test.wav
+     检查方法：speaker-test -t sine -f 440 -l 1 无报错（生成测试音）
+             若 speaker-test 不可用则用 aplay / paplay / pw-play 依次尝试播放任意 wav 文件
      失败处理：检查音频输出设备（HDMI/3.5mm/I2S）
-     注意：aplay 是系统主要 fallback 播放器（其次 paplay），至少一台可用
+     注意：播放链为 aplay → paplay → pw-play，至少一台可用
 
 
 四、Python 音频依赖检查（Pi 上容易翻车）

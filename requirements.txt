@@ -9,6 +9,6 @@ ultralytics
 pygame
 keyboard
 tenacity
-piper
+piper-tts
 vosk
 PyYAML
