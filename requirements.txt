@@ -12,3 +12,4 @@ tenacity
 piper-tts
 vosk
 PyYAML
+picamera2

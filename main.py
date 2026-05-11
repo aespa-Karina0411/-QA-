@@ -7,6 +7,7 @@ import threading
 import time
 
 import cv2
+from camera.factory import create_camera_provider
 from perception.spatial_adapter import SpatialParserAdapter
 from asr.asrmanager import ASRManager
 from core.controller import Controller
@@ -96,43 +97,48 @@ class AsyncASRInput:
 
 
 def run():
-    import os
-    camera_src = os.getenv("CAMERA_SRC", "0")
-    if camera_src == "csi":
-        cap = cv2.VideoCapture(
-            "libcamerasrc ! video/x-raw,width=640,height=480 ! videoconvert ! appsink",
-            cv2.CAP_GSTREAMER
+    camera = create_camera_provider()
+    if not camera.start():
+        print("[WARN] Camera initialization failed")
+
+    ENABLE_YOLO       = os.getenv("ENABLE_YOLO",       "1") == "1"
+    ENABLE_CONTROLLER = os.getenv("ENABLE_CONTROLLER", "1") == "1"
+    ENABLE_ASR        = os.getenv("ENABLE_ASR",        "1") == "1"
+    ENABLE_VLM        = os.getenv("ENABLE_VLM",        "1") == "1"
+    ENABLE_TTS        = os.getenv("ENABLE_TTS",        "1") == "1"
+
+    if ENABLE_YOLO:
+        try:
+            yolo_utils.load_yolo_model("yolov8n.pt")
+        except Exception as e:
+            print("[WARN] YOLO model load failed:", e)
+
+    if ENABLE_TTS:
+        try:
+            tts_local_utils.load_tts_model("models/piper/zh_CN-huayan-medium.onnx")
+        except Exception as e:
+            print("[WARN] TTS model load failed:", e)
+
+    if ENABLE_CONTROLLER:
+        controller = Controller(
+            spatial_parser=SpatialParserAdapter(),
+            decision_maker=DecisionMaker(),
+            speech_manager=SpeechManager(
+                min_interval=CONFIG.get("speech.min_interval", 2.0),
+                stable_count=CONFIG.get("speech.stable_count", 3)),
+            enable_logging=False,
         )
-        if not cap.isOpened():
-            print("[WARN] GStreamer CSI failed, trying V4L2 device 0")
-            cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     else:
-        cap = cv2.VideoCapture(int(camera_src))
-    if not cap.isOpened():
-        print("[WARN] Camera open failed, fallback to 0")
-        cap = cv2.VideoCapture(0)
+        controller = None
 
-    try:
-        yolo_utils.load_yolo_model("yolov8n.pt")
-    except Exception as e:
-        print("[WARN] YOLO model load failed:", e)
-    try:
-        tts_local_utils.load_tts_model("models/piper/zh_CN-huayan-medium.onnx")
-    except Exception as e:
-        print("[WARN] TTS model load failed:", e)
+    if ENABLE_ASR and ENABLE_CONTROLLER:
+        asr = ASRManager()
+        async_asr = AsyncASRInput(asr)
+    else:
+        asr = None
+        async_asr = None
 
-    asr = ASRManager()
-    async_asr = AsyncASRInput(asr)
-    controller = Controller(
-        spatial_parser=SpatialParserAdapter(),
-        decision_maker=DecisionMaker(),
-        speech_manager=SpeechManager(
-            min_interval=CONFIG.get("speech.min_interval", 2.0),
-            stable_count=CONFIG.get("speech.stable_count", 3)),
-        enable_logging=False,
-    )
-
-    if os.environ.get("EDGE_VISION_DASHBOARD"):
+    if os.environ.get("EDGE_VISION_DASHBOARD") and ENABLE_CONTROLLER:
         from observe import dashboard
         dashboard.start(controller)
 
@@ -143,46 +149,55 @@ def run():
         print("[MODE] Linux GUI mode")
     else:
         print("[MODE] Headless (Pi / no display)")
-    controller._play_startup_message()
+    if ENABLE_CONTROLLER:
+        controller._play_startup_message()
     frame_count = 0
     detect_interval = CONFIG.get("yolo.detect_interval", 2)
     fps_limit = CONFIG.get("system.fps_limit", 30)
 
     try:
         while True:
-            ret, frame = cap.read()
+            ret, frame = camera.read()
             if not ret:
                 continue
 
-            frame_count += 1
+            if ENABLE_YOLO or ENABLE_CONTROLLER:
+                frame_count += 1
+
             if frame_count % detect_interval == 0:
-                controller.context["current_image"] = encode_frame_as_data_url(frame.copy())
-                conf = CONFIG.get("yolo.conf_threshold", 0.5)
-                imgsz = CONFIG.get("yolo.imgsz", 320)
-                objects = yolo_utils.detect_objects(frame, conf_threshold=conf, imgsz=imgsz)
+                if ENABLE_YOLO:
+                    conf = CONFIG.get("yolo.conf_threshold", 0.5)
+                    imgsz = CONFIG.get("yolo.imgsz", 320)
+                    objects = yolo_utils.detect_objects(frame, conf_threshold=conf, imgsz=imgsz)
+                    yolo_utils.draw_boxes(frame, objects)
+                else:
+                    objects = []
 
-                nav_event = {
-                    "type": "navigation",
-                    "data": {
-                        "objects": objects,
-                        "frame_shape": frame.shape,
-                    },
-                    "timestamp": time.time(),
-                }
-                result = controller.handle_event(nav_event)
+                if ENABLE_CONTROLLER:
+                    controller.context["current_image"] = encode_frame_as_data_url(frame.copy())
+                    nav_event = {
+                        "type": "navigation",
+                        "data": {
+                            "objects": objects,
+                            "frame_shape": frame.shape,
+                        },
+                        "timestamp": time.time(),
+                    }
+                    result = controller.handle_event(nav_event)
 
-                if result and result.get("speech", {}).get("spoken"):
-                    print(f"[{result['mode']}] 导航播报中...")
+                    if result and result.get("speech", {}).get("spoken"):
+                        print(f"[{result['mode']}] 导航播报中...")
 
-            user_event = async_asr.poll_event()
-            if user_event:
-                print(f"[ASR] 识别结果: {user_event.get('data', {}).get('text', '')}")
-                res = controller.handle_event(user_event)
-                print(f"[System] 模式: {res['mode']}, 回复: {res.get('response')}")
+            if ENABLE_ASR and ENABLE_CONTROLLER:
+                user_event = async_asr.poll_event()
+                if user_event:
+                    print(f"[ASR] 识别结果: {user_event.get('data', {}).get('text', '')}")
+                    res = controller.handle_event(user_event)
+                    print(f"[System] 模式: {res['mode']}, 回复: {res.get('response')}")
 
             # Headless Pi 兼容：无 DISPLAY 时跳过 GUI
             if os.environ.get("DISPLAY") or os.name == "nt":
-                if os.environ.get("EDGE_VISION_DASHBOARD"):
+                if os.environ.get("EDGE_VISION_DASHBOARD") and ENABLE_CONTROLLER:
                     _draw_hud(frame, controller)
                 cv2.imshow("Edge Vision", frame)
                 wait_ms = max(1, int(1000.0 / fps_limit))
@@ -191,10 +206,11 @@ def run():
                 key = -1
                 time.sleep(max(1.0 / fps_limit, 0.01))
 
-            controller._poll_vlm_results()
-            controller._drain_arbitrator()
+            if ENABLE_CONTROLLER:
+                controller._poll_vlm_results()
+                controller._drain_arbitrator()
 
-            if key == ord("a"):
+            if ENABLE_ASR and ENABLE_CONTROLLER and key == ord("a"):
                 started = async_asr.start_listening()
                 if started:
                     print("\n[ASR] 已启动后台语音采集...")
@@ -208,20 +224,23 @@ def run():
                 dr, _, _ = select.select([sys.stdin], [], [], 0)
                 if dr:
                     line = sys.stdin.readline().strip()
-                    if line.lower() == 'a':
+                    if ENABLE_ASR and ENABLE_CONTROLLER and line.lower() == "a":
                         async_asr.start_listening()
-                    elif line.lower() == 'q':
+                    elif line.lower() == "q":
                         print("[INFO] Quit signal received")
                         break
 
     finally:
-        controller.speech.stop()
-        async_asr.close()
-        asr.close()
-        cap.release()
+        if ENABLE_CONTROLLER:
+            controller.speech.stop()
+        if ENABLE_ASR and ENABLE_CONTROLLER:
+            async_asr.close()
+            asr.close()
+        camera.stop()
         cv2.destroyAllWindows()
-        controller.save_log("run_log.json")
-        print("[System] 日志已保存至 run_log.json")
+        if ENABLE_CONTROLLER:
+            controller.save_log("run_log.json")
+            print("[System] 日志已保存至 run_log.json")
 
 
 def main():
