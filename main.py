@@ -27,6 +27,30 @@ def encode_frame_as_data_url(frame) -> str | None:
     return f"data:image/jpeg;base64,{encoded}"
 
 
+def _draw_hud(frame, controller):
+    """将队列状态叠加到摄像头画面右下角（只读，零调度影响）"""
+    arb = controller.arbitrator
+    sm = controller.speech_manager
+    ctx = controller.context
+    focus = ctx["system"]["user_focus"]
+    now = __import__("time").time()
+
+    playing = (sm.speech_lock["owner"] or "idle") if sm.speech_lock["active"] else "idle"
+    throttled = "ACTIVE" if now - arb.last_play_time < 1.5 else "idle"
+    aging = "TRIGGERED" if any(
+        now - it.get("enqueue_ts", now) > 4.0 for it in arb.vlm_queue
+    ) else "idle"
+
+    lines = [
+        f"WARNING:{len(arb.warning_queue)}  VLM:{len(arb.vlm_queue)}  ENV:{len(arb.env_queue)}",
+        f"PLAY:{playing}  THROTTLE:{throttled}  FOCUS:{focus.get('active',False)}  AGING:{aging}",
+    ]
+    h, w = frame.shape[:2]
+    for i, line in enumerate(lines):
+        y = h - 20 + i * 18
+        cv2.putText(frame, line, (8, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+
+
 class AsyncASRInput:
     """后台采集 ASR，并将识别结果回传为 Event。"""
 
@@ -160,6 +184,8 @@ def run():
 
             # Headless Pi 兼容：无 DISPLAY 时跳过 GUI
             if os.environ.get("DISPLAY") or os.name == "nt":
+                if os.environ.get("EDGE_VISION_DASHBOARD"):
+                    _draw_hud(frame, controller)
                 cv2.imshow("Edge Vision", frame)
                 wait_ms = max(1, int(1000.0 / fps_limit))
                 key = cv2.waitKey(wait_ms) & 0xFF
