@@ -382,6 +382,49 @@ explicit 参数 → EDGE_VISION_PROFILE 环境变量 → config.yaml 的 profile
 - **TTS 临时文件 `/dev/shm`**：Linux 下临时 wav 文件写入 RAM disk 而非 SD 卡 `/tmp`，减少 SD 卡写入损耗。
 - **网络探测端点修正**：从 `8.8.8.8:53`（DNS 端口）改为 `dashscope.aliyuncs.com:443`（业务端点），避免校园网/企业网封锁 DNS 53 导致系统误判为离线。
 
+3.17 camera/ (CameraProvider 抽象层，新增于 Phase 2)
+
+在 Pi5/Trixie 实机部署时发现 OpenCV VideoCapture backend 与 libcamera runtime 存在兼容性问题。为解决此问题并彻底解耦 Camera Runtime 与业务层，新增 camera/ 目录：
+
+```
+camera/
+├── base_provider.py   # 抽象接口 CameraProvider: start()/read()/stop()/is_opened()
+├── pc_provider.py     # cv2.VideoCapture 封装（CSI/GStreamer/V4L2 4 级 fallback 全部内聚）
+├── pi_provider.py     # Picamera2 封装（懒加载 import，PC 环境不崩溃）
+└── factory.py         # 工厂函数，复用 CONFIG.get("profile") 自动返回 PCProvider/PiProvider
+```
+
+接口契约：read() 返回 (success: bool, frame: numpy.ndarray)，frame 必须为 BGR 格式。YOLO、cv2.imencode、HUD overlay、OpenCV GUI 全部依赖此契约。
+
+关键设计：
+- PiProvider 的 `from picamera2 import Picamera2` 在 start() 方法内部懒加载 → PC 环境整个项目不因缺失 picamera2 而崩溃
+- PCProvider 内部包含完整 fallback 链：CAMERA_SRC="csi" → GStreamer pipeline → V4L2 → 默认设备 0。调用方（main.py）零感知
+- PiProvider 显式配置 `main={"format": "BGR888"}` 确保 Pi 端 frame 格式与下游兼容
+
+3.18 Feature Flag 体系（Phase 3 基础设施）
+
+为支持 Pi5 逐层恢复验证（Phase 3-8），在 main.py 中建立 5 个独立 feature flag：
+
+| Flag | 环境变量 | 控制范围 | 默认值 |
+|------|----------|---------|--------|
+| ENABLE_YOLO | ENABLE_YOLO | YOLO 模型加载、推理、draw_boxes overlay | "1" |
+| ENABLE_CONTROLLER | ENABLE_CONTROLLER | Controller 构造/销毁、nav_event、arbitrator、VLM drain、启动播报、日志 | "1" |
+| ENABLE_ASR | ENABLE_ASR | ASRManager、语音采集、'a' 键触发（依赖 Controller） | "1" |
+| ENABLE_VLM | ENABLE_VLM | VLM 入口（已定义，Phase 8 启用） | "1" |
+| ENABLE_TTS | ENABLE_TTS | TTS 模型加载（播放链路 Phase 6 需额外改 SpeechManager） | "1" |
+
+所有 flag 默认 "1"，不加环境变量时系统行为与改前完全一致。gating 覆盖模型加载、模块构造、主循环 AI 处理块、finally 清理块。Controller/ASR 未构造时对应变量为 None，finally 块独立判空防 AttributeError。
+
+逐层恢复映射：
+```
+Phase 3: 全 0 → camera_only（仅 Camera + GUI）
+Phase 4: ENABLE_YOLO=1 → + YOLO 检测与 overlay
+Phase 5: + ENABLE_CONTROLLER=1 → + 决策与场景管理（无声）
+Phase 6: + ENABLE_TTS 内部 mock → + 调度与优先级（print 代替 TTS）
+Phase 7: ENABLE_TTS=1 → + 真正音频
+Phase 8: 全 1 → 完整系统
+```
+
 
 第四部分：系统行为关键机制
 ============================

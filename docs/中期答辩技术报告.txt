@@ -295,9 +295,11 @@ Anti-Fabrication验证已通过：recompute_from_trace.py独立复算指标与re
 
 10  后续工作计划
 
-第一步：树莓派5实机验证（Stage 3B）。在树莓派5上运行main.py，使用摄像头+麦克风进行端到端测试，产出与PC端Stage 3基线可对比的trace数据。Pi的作用是验证现有行为规律是否在边端条件下成立——即"验证趋势"而非"发现问题"。若Pi上帧率降低导致drain间隔增大，可能进一步缓解节流耦合；若YOLO计算阻塞主循环，可能导致队列行为改变。两种情况均需实测确认。
+第一步（已完成）：Camera Runtime 解耦 + Pi5 Runtime Baseline（Phase 2-3）。针对 Pi5/Trixie 环境下 OpenCV VideoCapture 与 libcamera 的兼容性问题，实现了 CameraProvider 抽象层（camera/ 目录，含 PCProvider/PiProvider/factory），将 Camera Runtime 从 main.py 彻底解耦。同时建立 5 个 Runtime Feature Flag（ENABLE_YOLO/CONTROLLER/ASR/VLM/TTS）支持逐层恢复验证。当前 Pi5 Phase 3 runtime baseline 验证手册已交付（Pi5_Phase3_Handbook.txt），由队友在 Pi 实机上执行。
 
-第二步：基于三阶段汇总数据的一次性参数优化。当前不进行单独参数调整，因为在获取Pi实机数据之前，调度参数优化的决策空间尚未完整——系统行为取决于输入事件分布，而Pi上的YOLO输出特性、帧率、交互频率均需实测。待三阶段数据齐全后，综合调整throttle_window、vlm_survival_interval等参数，收敛设计。
+第二步（进行中）：树莓派 5 实机验证（Phase 3-8 逐层恢复）。在 Pi5 上按 Phase 3→4→5→6→7→8 的顺序逐层恢复系统模块。Phase 3 验证 CameraProvider + main loop + GUI 长期稳定性；Phase 4 验证 YOLO 实时视觉负载；Phase 5-8 逐步恢复 Controller/SpeechArbitrator/TTS/VLM/ASR。每层产出可对比的 trace 数据，确认 PC 端已验证的行为规律是否在边端条件下成立。
+
+第三步：基于 Pi 实机数据的参数优化收敛。在三阶段（PC 合成/PC 真实/Pi 实机）数据齐全后，综合调整 throttle_window、vlm_survival_interval 等调度参数，一次性收敛设计。
 
 11  总结
 
