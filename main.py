@@ -30,7 +30,7 @@ def encode_frame_as_data_url(frame) -> str | None:
 def _draw_hud(frame, controller):
     """将队列状态叠加到摄像头画面右下角（只读，零调度影响）"""
     arb = controller.arbitrator
-    sm = controller.speech_manager
+    sm = controller.speech
     ctx = controller.context
     focus = ctx["system"]["user_focus"]
     now = __import__("time").time()
