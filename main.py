@@ -110,6 +110,10 @@ def run():
         enable_logging=False,
     )
 
+    if os.environ.get("EDGE_VISION_DASHBOARD"):
+        from observe import dashboard
+        dashboard.start(controller)
+
     print("系统已启动。按 'a' 开始语音输入，按 'q' 退出。")
     if os.name == "nt":
         print("[MODE] Windows (GUI enabled)")
