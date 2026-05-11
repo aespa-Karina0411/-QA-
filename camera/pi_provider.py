@@ -17,6 +17,7 @@ class PiProvider(CameraProvider):
             self._picam2.configure(config)
             self._picam2.start()
             self._started = True
+            print("[CAMERA] PiProvider active")
             return True
         except Exception as e:
             print(f"[ERROR] PiProvider start failed: {e}")

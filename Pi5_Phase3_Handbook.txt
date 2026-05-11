@@ -1,0 +1,123 @@
+======================================================================
+ edge-visionQA Pi5 Phase 3 Handbook — Runtime Baseline / Survival Test
+======================================================================
+
+【当前状态】
+
+已完成：
+  1. Camera Runtime 解耦 — 不再依赖 cv2.VideoCapture，改用 CameraProvider
+     ── Pi 自动选择 PiProvider(Picamera2)，PC 自动选择 PCProvider(OpenCV)
+  2. Runtime Feature Flag 解耦 — 5 个独立开关，可逐层恢复 AI 功能
+
+  不再是一启动全系统一起跑，而是逐层恢复、逐层验证。
+
+
+【Phase 3 目标（一句话）】
+
+  不测试 AI。只验证 PiProvider + main loop + GUI 能否长期稳定运行。
+
+
+【启动命令（Pi 终端，bash）】
+
+  ENABLE_YOLO=0 ENABLE_CONTROLLER=0 ENABLE_ASR=0 ENABLE_VLM=0 ENABLE_TTS=0 python main.py
+
+  也可分行写：
+
+  export ENABLE_YOLO=0
+  export ENABLE_CONTROLLER=0
+  export ENABLE_ASR=0
+  export ENABLE_VLM=0
+  export ENABLE_TTS=0
+  python main.py
+
+
+【当前仅启动的模块】
+
+  - CameraProvider (PiProvider / Picamera2)
+  - main loop (camera.read 循环)
+  - GUI (cv2.imshow)
+
+【当前不启动的模块（被 flag 关闭）】
+
+  - YOLO
+  - Controller / Arbitrator / Trace / Scheduler
+  - ASR
+  - VLM
+  - TTS
+
+
+【依赖确认（在 Pi 上先跑一次）】
+
+  pip install -r requirements.txt
+
+  预期 picamera2 行会正常安装。其他依赖如 pyaudio/piper-tts/vosk
+  安装失败可暂时忽略（Phase 3 用不到它们）。
+
+
+【验证清单（按顺序执行）】
+
+  [1] 确认 Provider
+      启动后观察终端，应该看到：
+        [CAMERA] PiProvider active
+      如果看到 PCProvider active，说明 profile 判断错误，
+      检查 EDGE_VISION_PROFILE 环境变量或 config.yaml 中的 profile 值。
+
+  [2] GUI 正常刷新
+      画面是否连续、无黑屏、无停帧。
+      如果 headless（无显示器），跳过此项。
+
+  [3] 长时间稳定性 ⬅⬅⬅ 最重要
+      连续运行至少 10-30 分钟，观察：
+        - 是否 freeze（画面彻底不动）
+        - 是否 GUI stall（偶尔卡一下但恢复）
+        - 延迟是否越来越严重（latency drift）
+        - CPU 是否持续飙升
+        - 内存是否持续增长（用 htop 或 free -m 观察）
+
+  [4] q 键退出
+      按 q → 正常退出 → 再启动 → 再退出
+      确认无 "camera busy" 或 "camera unavailable" 错误。
+
+  [5] 资源监控
+      另开终端运行 htop，观察：
+        - python 进程 CPU%（是否稳定）
+        - python 进程 RES 内存（是否持续增长）
+
+
+【当前不要做的事】
+
+  - 不要恢复 YOLO / ASR / VLM / TTS
+  - 不要修改 arbitrator / scheduler / trace
+  - 不要测试语音播报或 AI 对话
+
+  Phase 3 的唯一目的是建立 Pi5 上的稳定 runtime 基线。
+
+
+【常见问题排查】
+
+  Q: 提示 "PiProvider start failed: No module named picamera2"
+  A: Pi 上未安装 picamera2。执行 pip install picamera2。
+
+  Q: 提示 "camera initialization failed"
+  A: 相机设备未识别。先确认 picamera2 可独立运行：
+       python -c "from picamera2 import Picamera2; p=Picamera2(); p.start(); print('OK')"
+
+  Q: 提示 "PCProvider active"（而非 PiProvider）
+  A: profile 判断为 PC。检查：
+       1. 当前 Pi 系统是否为 Linux（uname -a）
+       2. config/config.yaml 中 profile 是否为 pc
+       3. 环境变量 EDGE_VISION_PROFILE 是否被强制设为 pc
+     修复：在 config/config.yaml 中将 profile 改为 pi 或留空让其自动判断。
+
+  Q: GUI 窗口不显示
+  A: 确认环境变量 DISPLAY 已设置（echo $DISPLAY）。
+     如果 Pi 是 headless（无屏幕），GUI 会跳过，属正常行为。
+
+
+【下一阶段 Phase 4 预告】
+
+  恢复 YOLO：相机画面 + YOLO 检测 + 画框 overlay + GUI。
+  启动方式：
+    ENABLE_YOLO=1 ENABLE_CONTROLLER=0 ENABLE_ASR=0 ENABLE_VLM=0 ENABLE_TTS=0 python main.py
+
+======================================================================

@@ -31,6 +31,8 @@ class PCProvider(CameraProvider):
             print("[WARN] Camera open failed, fallback to 0")
             self._cap = cv2.VideoCapture(0)
 
+        if self._cap.isOpened():
+            print("[CAMERA] PCProvider active")
         return self._cap.isOpened()
 
     def read(self):
