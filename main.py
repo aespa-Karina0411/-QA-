@@ -37,13 +37,11 @@ def _draw_hud(frame, controller):
 
     playing = (sm.speech_lock["owner"] or "idle") if sm.speech_lock["active"] else "idle"
     throttled = "ACTIVE" if now - arb.last_play_time < 1.5 else "idle"
-    aging = "TRIGGERED" if any(
-        now - it.get("enqueue_ts", now) > 4.0 for it in arb.vlm_queue
-    ) else "idle"
+    last_vlm = f"{now - arb.last_vlm_play_time:.1f}s ago" if arb.last_vlm_play_time > 0 else "none"
 
     lines = [
-        f"WARNING:{len(arb.warning_queue)}  VLM:{len(arb.vlm_queue)}  ENV:{len(arb.env_queue)}",
-        f"PLAY:{playing}  THROTTLE:{throttled}  FOCUS:{focus.get('active',False)}  AGING:{aging}",
+        f"W:{len(arb.warning_queue)}  V:{len(arb.vlm_queue)}  E:{len(arb.env_queue)}  PLAY:{playing}  FOCUS:{focus.get('active',False)}",
+        f"THROTTLE:{throttled}  LAST_VLM:{last_vlm}",
     ]
     h, w = frame.shape[:2]
     for i, line in enumerate(lines):
