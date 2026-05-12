@@ -220,7 +220,7 @@ python recompute_from_trace.py
 sudo apt install portaudio19-dev alsa-utils libsdl2-mixer-2.0-0
 
 # Python 依赖
-pip install opencv-python ultralytics numpy pillow openai dashscope pyaudio playsound3 pygame keyboard tenacity vosk piper PyYAML
+pip install requirements.txt
 ```
 
 ### 模型文件
