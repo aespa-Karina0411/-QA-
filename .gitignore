@@ -30,6 +30,7 @@ analysis/history/
 # Private documents
 MID_REPORT_DRAFT.txt
 大创日志.md
+*.docx
 
 # Model files (too large for git)
 *.pt
