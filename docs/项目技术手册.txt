@@ -51,7 +51,7 @@ CPU 算力约桌面 PC 的 1/10、内存约 4-8GB、无 GPU 加速——
 | 指标 | 数值 |
 |------|------|
 | 总代码量 | ~5000 行 Python |
-| 模块数 | 8 个核心模块 |
+| 模块数 | 9 个核心模块（含 camera/） |
 | YOLO 模型 | YOLOv8n (imgsz=256@Pi, 320@PC) |
 | VLM 模型 | Qwen3.6-Flash (阿里云 DashScope) |
 | ASR 引擎 | Vosk 离线（Pi） / fun-asr-realtime 云端（PC） |
@@ -116,6 +116,9 @@ VLMManager  # deque + poll_result，不阻塞主循环
 
 # 原则 5: 单一数据源
 trace.jsonl  # 唯一可信来源，所有指标可独立复算
+
+# 原则 6: Camera 解耦
+CameraProvider  # Pi/PC 自动选择 backend（Picamera2 / cv2.VideoCapture），主循环零感知
 ```
 
 

@@ -1,6 +1,6 @@
 中期答辩报告
 ================================================================================
-项目名称：edge-visionQA — 资源受限条件下的嵌入式多模态实时调度系统
+项目名称：edge-visionQA — 可穿戴视觉系统
 项目类型：大学生创新训练计划
 负 责 人：赵方正
 团队其他成员：李程俊、陈灏宇、韩恺
@@ -177,7 +177,7 @@ force_play 标记的任务不参与评分竞争，而是在评分流程前直接
 
 5  分阶段工程实现方法
 
-项目采用逐层收敛的工程方法，分为五个阶段。
+项目采用逐层收敛的工程方法，分为 A-G 七个阶段，从行为正确逐步推进至 Runtime 解耦与逐层验证。
 
 Phase A（行为正确）：限定用户说话后的对话窗口内抑制环境播报（user_focus.timeout=5秒维持用户焦点状态，conversation_window=3秒内禁止ENVIRONMENT_DESC和STATUS_UPDATE播报），确保用户提问不被打断。VLM multi-modal inconsistency修复：在对话历史非空的情况下，VLM消息构建中丢失了image字段，导致第二轮起VLM变为纯文本输入。此阶段也实现了ResponseRouter，根据用户意图类型将问题分派至最适合的回答模块——环境判断类由本地objects直接回答，物体查找类从scene data提取，一般问答走VLM。同时引入了Speech Throttle（节流门控）和VLM Fallback文本，防止VLM失败回退到navigation输出。
 
@@ -188,6 +188,10 @@ Phase C（资源约束）：将全部硬编码参数迁移为YAML配置系统，
 Phase D（策略层）：引入VLM评分策略替换LIFO出队，使调度行为可解释。增设USER_FOCUS保留槽，保证VLM在对话模式下的零延迟路径。Aging Boost作为最后防线，确保VLM不无限饥饿。
 
 Phase E（观测）：加入DROP_CANDIDATE标记机制——当VLM条目在队列逼近上限且语义级别仅为常规时，系统记录该条目理论上本可丢弃，但不下达丢弃命令。该观测数据在后续Phase E1中用于决策。
+
+Phase F（Camera 解耦，Phase 2）：在 Pi5/Trixie 实机部署中发现 OpenCV VideoCapture 与 libcamera 存在兼容性问题，因此实现 CameraProvider 抽象层（camera/ 目录，含 base_provider / PCProvider / PiProvider / factory），将 Camera Runtime 从 main.py 彻底解耦。PiProvider 封装 Picamera2（懒加载 import），PCProvider 内聚 CSI/GStreamer/V4L2 四级 fallback 链。factory 复用现有 CONFIG profile 自动选型。
+
+Phase G（Staged Bring-Up，Phase 3）：建立 5 个 Runtime Feature Flag（ENABLE_YOLO/CONTROLLER/ASR/VLM/TTS），默认全开，支持 Phase 3-8 逐层恢复验证。从 camera_only（仅 Camera + GUI）开始，依次恢复 YOLO → Controller → SpeechArbitrator → TTS → VLM/ASR，每层独立验证稳定性后再进入下一层，确保问题可隔离定位。
 
 项目同时包含四轮运行时适配（Rounds 1-4），聚焦树莓派实机可运行性而非新增功能：
 
