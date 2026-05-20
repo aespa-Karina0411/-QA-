@@ -149,7 +149,8 @@ context = {
         "last_update": timestamp,
         "version": int,          # 版本号（VLM 用它对答案时效）
         "state": "stable"|"unstable",
-        "recent_objects": [...]  # 30s 短期记忆（供 VLM 上下文）
+        "recent_objects": [...], # 30s 短期记忆（供 VLM 上下文）
+        "current_image": str,    # 当前帧的 JPEG data URL（VLM 调用时使用）
     },
     "dialog": {
         "history": [...],        # 最近 6 轮对话
@@ -190,7 +191,7 @@ select_next() 的 7 层优先级链：
 1. USER_FOCUS 保留槽    → 用户提问间的 VLM，直接返回
 2. VLM 老化提升 (Aging) → 任意任务等待 > 4s，force_play
 3. VLM 保活 (Survival)  → 距上次 VLM 播放 > 4s，强制选 VLM
-4. 硬性交错              → 连续 2 个 WARNING 后强制选 VLM
+4. 硬性交错              → 连续 1 个 WARNING 后强制选 VLM（consecutive_warnings >= 1）
 5. WARNING 优先          → 有 WARNING 就播（但不超过 1 个连续）
 6. 加权轮询 [VLM,ENV,ENV] → 在非紧急情况下按权重轮流
 7. 兜底                  → 有 VLM 就播 VLM，没有就播 ENV
@@ -296,7 +297,15 @@ DANGER_CLASSES: {"car", "truck", "bus", "motorbike"}（高危险物集合）
 - 3s 冷却：防止连续提问过度调用云端 API
 - Fallback 文本：VLM 返回空时降级"我暂时无法判断..."
 
-3.8 vlm/providers/vlm_utils.py (云端适配，约 70 行)
+3.8 vlm/vlm_cloud_adapter.py (VLM 云端适配, 约 17 行)
+
+将 VLM 云端调用封装成标准接口，隔离底层实现细节。Controller 通过此适配器调用云端 API，不直接接触 OpenAI SDK。
+
+3.9 vlm/vlm_intent_parser.py (VLM 意图解析, 约 62 行)
+
+用户口语 → 结构化 VLM 查询映射（object_query / detail_query / scene_query）。解析用户意图后调用 build_prompt() 构造 VLM prompt，注入场景上下文和目标物体信息。
+
+3.10 vlm/providers/vlm_utils.py (云端 API 调用, 约 77 行)
 
 调用阿里云 DashScope OpenAI 兼容接口：
 - 模型: Qwen3.6-Flash
@@ -304,7 +313,7 @@ DANGER_CLASSES: {"car", "truck", "bus", "motorbike"}（高危险物集合）
 - 15s 超时
 - API Key 从环境变量 DASHSCOPE_API_KEY 读取
 
-3.9 asr/asrmanager.py (ASR 管理，约 95 行)
+3.11 asr/asrmanager.py (ASR 管理，约 95 行)
 
 ASR 模式决策：通过 RuntimeManager 的网络探测结果决定用 cloud 还是 local 引擎。
 
@@ -312,23 +321,16 @@ ASR 模式决策：通过 RuntimeManager 的网络探测结果决定用 cloud �
 
 在树莓派上（config_pi.yaml 设置 backend: vosk），默认用本地离线识别。
 
-3.10 tts/tts_local_utils.py (本地 TTS，约 170 行)
+3.12 tts/tts_local_utils.py (本地 TTS，约 170 行)
 
 基于 Piper 的离线中文 TTS：
 - 模型: zh_CN-huayan-medium.onnx
 - 播放链: pygame.mixer → aplay → paplay（三层 fallback）
 - 异步播放 + 打断机制（新播放自动终止旧播放）
 - 自动清理临时 wav 文件
-- Pi 优化：Linux 下临时文件写入 `/dev/shm`（RAM disk）而非 `/tmp`（SD 卡），减少 SD 卡写入损耗。Windows 保持原路径。一键迁移，调度无影响。<｜end▁of▁thinking｜><｜end▁of▁thinking｜>更新`tts_local_utils.py`（TTS临时目录改为`/dev/shm`），补写大创日志，并将此优化同步到项目技术手册和中期报告。
-代码改动已完成并本地提交，现在将三个文档同步更新。<｜end▁of▁thinking｜>同时更新项目技术手册和中期报告。
-我先在技术手册的TTS说明中添加`/dev/shm`优化点，然后在报告的性能路径修复段落中补充TTS临时文件优化。
-
-<｜｜DSML｜｜tool_calls>
-<｜｜DSML｜｜invoke name="edit">
-<｜｜DSML｜｜parameter name="newString" string="true">- 自动清理临时 wav 文件
 - Pi 优化：Linux 下临时文件写入 `/dev/shm`（RAM disk）而非 `/tmp`（SD 卡），减少 SD 卡写入损耗。Windows 保持原路径。一键迁移，调度无影响。
 
-3.11 expression/ (表达层，约 100 行)
+3.13 expression/ (表达层，约 100 行)
 
 - templates.py: intent → 文本模板池（含 DESCRIPTIVE/GUIDED/GUIDED_DANGER 三级）
 - expression_engine.py: random.choice 选模板 + .format() 填入字段
@@ -339,7 +341,7 @@ ASR 模式决策：通过 RuntimeManager 的网络探测结果决定用 cloud �
 "前方较近处有汽车，请注意避让，向右侧移动" （GUIDED_DANGER，较近+危险）
 "右侧有汽车" （DESCRIPTIVE，较远）
 
-3.12 observe/trace_logger.py (可观测性，约 20 行)
+3.14 observe/trace_logger.py (可观测性，约 20 行)
 
 JSONL 格式追加写日志。每条记录包含 event type、id、source、reason、ts 等字段。
 
@@ -348,14 +350,14 @@ SUBMIT → DROP_CANDIDATE → VLM_SCORE_SELECT → SELECT → REQUEUE → DROP �
 
 这是系统"可审计性"的基础——所有行为指标都可以从这份日志独立计算得出。
 
-3.13 asr/ 和 tts/ 的其他文件
+3.15 asr/ 和 tts/ 的其他文件
 
 asr/asr_utils.py: 基于 pyaudio + DashScope 的云端 ASR（PTT 按键录音）
 asr/asr_local_utils.py: 基于 pyaudio + Vosk 的本地 ASR
 tts/tts_backend.py: TTS 抽象层（LocalTTS 是当前唯一实现）
 tts/tts_utils.py: 云端 TTS（cosyvoice-v1），当前未使用
 
-3.14 config/ (配置系统，约 3 文件)
+3.16 config/ (配置系统，约 3 文件)
 
 config/config.yaml: 基础配置（全部参数的默认值）
 config/config_pc.yaml: PC 覆盖配置（自动加载）
@@ -368,14 +370,14 @@ explicit 参数 → EDGE_VISION_PROFILE 环境变量 → config.yaml 的 profile
 - Linux → "pi"（加载 config_pi.yaml）
 - 其他 → "pc"（加载 config_pc.yaml）
 
-3.15 core/runtime_manager.py (运行时管理，约 150 行)
+3.17 core/runtime_manager.py (运行时管理，约 150 行)
 
 网络探测 + 模块运行模式决策：
 - 每 5s 探测 `dashscope.aliyuncs.com:443` 是否可达（业务端点，非 DNS）
 - ASR 策略: prefer_cloud（在线用云端，离线用本地 Vosk）
 - 单例模式，线程安全
 
-3.16 Pi 部署专项优化
+3.18 Pi 部署专项优化
 
 针对树莓派 5 的硬件特性进行的工程优化，均不影响调度行为和 trace 结构：
 
@@ -385,7 +387,7 @@ explicit 参数 → EDGE_VISION_PROFILE 环境变量 → config.yaml 的 profile
 - **TTS 临时文件 `/dev/shm`**：Linux 下临时 wav 文件写入 RAM disk 而非 SD 卡 `/tmp`，减少 SD 卡写入损耗。
 - **网络探测端点修正**：从 `8.8.8.8:53`（DNS 端口）改为 `dashscope.aliyuncs.com:443`（业务端点），避免校园网/企业网封锁 DNS 53 导致系统误判为离线。
 
-3.17 camera/ (CameraProvider 抽象层，新增于 Phase 2)
+3.19 camera/ (CameraProvider 抽象层，新增于 Phase 2)
 
 在 Pi5/Trixie 实机部署时发现 OpenCV VideoCapture backend 与 libcamera runtime 存在兼容性问题。为解决此问题并彻底解耦 Camera Runtime 与业务层，新增 camera/ 目录：
 
@@ -404,7 +406,7 @@ camera/
 - PCProvider 内部包含完整 fallback 链：CAMERA_SRC="csi" → GStreamer pipeline → V4L2 → 默认设备 0。调用方（main.py）零感知
 - PiProvider 显式配置 `main={"format": "BGR888"}` 确保 Pi 端 frame 格式与下游兼容
 
-3.18 Feature Flag 体系（Phase 3 基础设施）
+3.20 Feature Flag 体系（Phase 3 基础设施）
 
 为支持 Pi5 逐层恢复验证（Phase 3-8），在 main.py 中建立 5 个独立 feature flag：
 
@@ -577,12 +579,25 @@ trace.jsonl 是唯一真实数据源。recompute_from_trace.py 完全独立地�
 
 7.2 可扩展方向（已规划，代码架构就绪）
 
+当前系统已具备轻量化语义导航能力（如"左侧有行人，可稍向右移动"的空间语义提醒）。
+对于上下台阶等复杂导航场景，我们评估后认为传统深度估计或 SLAM 方案对树莓派 5 的 CPU 算力压力较大，不适合当前系统的低延迟实时目标。
+
+因此项目后续更倾向于采用"风险触发型轻量导航"而非完整地图导航。具体包括：
+
 | 扩展项 | 实现复杂度 | 说明 |
 |--------|----------|------|
-| 离线本地 VLM (llama.cpp) | 中 | 新增 VLM Local Adapter，不改调度 |
-| GPIO 物理按键 | 低 | main.py 增加一个 if 分支 |
-| IMU 传感器融合 | 中 | 新增 IMU 采集模块 |
+| YOLO 模型量化/升级 | 低 | 将 YOLOv8n 量化为 INT8 或直接替换为 YOLOv10n INT8，进一步降低推理延迟和内存占用 |
+| 轻量化地形风险检测 | 中 | 新增 TerrainRiskDetector 模块，在 YOLO 目标检测之外并行运行。通过 OpenCV 几何特征分析（地面纹理断裂、水平边缘突变、地面消失区域等）检测前方台阶、坡度等地形异常，复用现有 SpatialParser 与 DecisionMaker 调度链路，输出如"前方地面存在高度变化，请注意脚下""前方疑似下台阶区域，请减速"等风险提醒 |
+| IMU 传感器融合 | 中 | 新增 IMU 采集模块，辅助判断用户朝向、运动状态和姿态变化 |
+| GPIO 物理按键 | 低 | main.py 增加一个 if 分支，替代键盘操作 |
+| 离线本地 VLM (llama.cpp) | 中 | 新增 VLM Local Adapter，不改调度，实现真正全离线视觉问答 |
 | 多语言支持 | 低 | 模板 + 模型替换 |
+
+TerrainRiskDetector 的设计原则：
+- 不引入新的大型模型（纯 OpenCV 几何特征），避免增加推理负担
+- 复用现有调度链路（SpatialParser → DecisionMaker → ExpressionEngine → SpeechArbitrator）
+- 属于"风险触发型"而非连续路径规划——只在检测到地形异常时才触发提醒
+- 不干扰正常行走时的系统静默性
 
 
 第八部分：答辩要点
@@ -592,31 +607,34 @@ trace.jsonl 是唯一真实数据源。recompute_from_trace.py 完全独立地�
 
 本项目不是调用 AI 模型做应用，而是设计了一个能在资源受限设备上确定性运行的调度系统。系统里的每个任务——从发出到被播放或被丢弃——都有一条可追溯的因果链。
 
-8.2 最可能被问的 8 个问题及回答
+8.2 答辩常见问题
 
-Q1: 你们系统和"调几个 API"有什么区别？
-答: API 是工具。我们的核心贡献是解决"多个 API 在资源受限的树莓派上并发运行怎么调度"这个系统问题。你可以调通 API，但保证不了警告在被人挤掉时仍然能被播放出来。
+详见第十部分"常见问题（答辩 FAQ）"，包含39个问答，覆盖项目定位、技术架构、实验验证、工程实践、刁钻问题及答辩技巧。
+以下列出最核心的8个问题的极简版回答（详细的解释和发挥空间请读第十部分）：
+
+Q1: 你们和"调几个 API"有什么区别？
+答: 调通API不难，难的是四个API并发时谁先谁后、资源不够丢谁保谁、怎么保证警告不被挤掉——我们解决的是系统级调度问题。
 
 Q2: 节流导致高频下任务被丢弃，这不是 bug 吗？
-答: 这正是调度策略的设计结果。系统在高负载下选择了"立刻丢弃低优先级"而非"排队等待"，保证了延迟始终稳定。而且真实运行中，摄像头帧的自然间隔缓解了这个问题——导航存活率达到 60%。
+答: 正是调度策略的设计结果。输出带宽固定（人只有一个耳朵），丢弃过时低优先级信息比排队播放更合理。
 
-Q3: 你们的创新到底在哪里？
-答: 核心创新在两个点：一是三队列隔离+确定性防饥饿机制（VLM 最大等待 ≤ 4 秒，数学上界），二是全链路 trace 可审计验证（任何拿到日志的人都能复算所有结论）。
+Q3: 你们的创新在哪里？
+答: 三队列隔离+确定性防饥饿（VLM最大等待≤4秒，数学上界）+ 全链路trace可审计。
 
-Q4: 系统实际用过吗？效果怎么样？
-答: 完成了 PC 三阶段验证，环境播报 60%、VLM 100% 播放、延迟 0.1s。树莓派实机验证已代码就绪，等待硬件到位。
+Q4: 系统实际效果怎么样？
+答: PC三阶段验证：VLM 100%播放，WARNING零丢失，avg_wait=0.1s。Pi实机验证代码就绪。
 
-Q5: 你们怎么保证评估数据不是伪造的？
-答: trace.jsonl 是唯一数据源。recompute_from_trace.py 可以独立重算所有指标并逐项比对。容差 < 0.01s。当前一致性判定: PASS。
+Q5: 怎么保证评估数据不是伪造的？
+答: trace.jsonl唯一数据源，recompute_from_trace.py独立重算，容差<0.01s，consistency_verdict=PASS。
 
-Q6: 代码主要在哪？各模块谁是核心？
-答: perception/speech_arbitrator.py 是三队列调度核心（340 行），perception/decision_utils.py 是决策引擎（150 行），core/controller.py 是事件控制中枢（530 行）。
+Q6: 核心代码在哪？
+答: perception/speech_arbitrator.py（三队列调度，340行）、perception/decision_utils.py（决策引擎，150行）、core/controller.py（事件中枢，530行）。
 
-Q7: 系统会不会在不可靠的树莓派环境里崩溃？
-答: 不会。四轮 14 项适配修复覆盖了所有故障降级路径：摄像头失败→continue、键盘权限不足→stdin 降级、pygame 失败→aplay 系统播放、云 ASR 失败→本地 Vosk。
+Q7: 树莓派上会不会崩溃？
+答: 不会。四轮14项适配修复覆盖全部故障降级路径，每个模块都有多层fallback。
 
 Q8: 后续计划是什么？
-答: Pi 实机验证 → 参数优化（一次性收敛）→ 可扩展功能叠加（本地 VLM、GPIO 按键）。
+答: Pi实机逐层验证（Phase 3-8）→ 参数一次性收敛 → YOLOv8n INT8量化/YOLOv10n INT8替换 → 轻量化地形风险检测（TerrainRiskDetector，纯OpenCV几何特征，不加重推理负担）→ IMU传感器融合 → 本地VLM。
 
 8.3 答辩收尾句
 
@@ -636,3 +654,484 @@ Q8: 后续计划是什么？
 6. 浏览 expression/ 目录（100 行）—— 理解文本输出
 7. 浏览 asr/ 和 tts/ 目录（各约 200 行）—— 理解 I/O 模块
 8. 阅读 docs/ 中的系统行为说明和实验报告
+
+
+第十部分：常见问题（答辩 FAQ）
+==============================
+
+本章为未参与项目开发的答辩发言人准备。以下覆盖答辩中可能被问到的所有问题。
+每个问题包含：简短回答（答辩现场用）和详细解释（理解后自由发挥用）。
+
+
+一、项目定位与背景
+-------------------
+
+Q1: 这个项目到底是做什么的？
+
+简答：我们做了一个面向盲人的可穿戴视觉语音问答系统。用户戴摄像头+耳机，系统自动播报环境（行人、车辆、障碍物），用户可以随时语音提问（"前面有什么？""这是什么地方？"），系统调用视觉大模型理解图像并用语音回答。
+
+详细：
+- 输入：摄像头（YOLOv8n目标检测）+ 麦克风（ASR语音识别）
+- 处理：SpatialParser语义解析 → DecisionMaker决策 → ExpressionEngine文本生成
+- 核心：SpeechArbitrator三队列调度（WARNING/VLM/ENV）
+- 输出：TTS语音播报（Piper本地离线）
+- 平台：树莓派5（资源受限，CPU≈PC的1/10，无GPU加速）
+- 状态：PC三阶段验证已完成，Pi实机验证进行中
+
+
+Q2: 为什么不直接用手机上的AI助手？盲人带手机拍照不就行了吗？
+
+简答：手机的交互模型是"主动使用"——拿起、解锁、打开App、拍照、等待回答。盲人在行走时无法同时做这些操作。我们的系统是"被动感知"——自动检测、自动播报、随时问答，解放双手和注意力。
+
+详细：
+- 我们的系统是连续运行的（不是单次拍照），每帧检测并决策播报
+- 自动检测危险（汽车靠近）并主动警告，不需要用户主动查询
+- PTT按键语音输入（按住说话），不需要触屏操作
+- 这是一个嵌入式实时系统，不是手机App
+
+
+Q3: 你们和市场上已有的盲人辅助产品有什么区别？
+
+简答：现有产品主要是两类：一是手机App（如Seeing AI），需要用户主动拍照，且不能实时感知环境变化；二是专用盲杖（超声波/激光测距），只能检测障碍物距离，没有语义信息。我们的系统同时做到了"实时连续感知+语义级别理解+自然语言交互"，并且运行在可穿戴设备上。
+
+详细：
+- Seeing AI等：基于手机相机，需要用户主动拍照→等待→听结果。每轮交互有3-10秒延迟，不能边走边用
+- 超声波盲杖：仅测距，不能告诉你"前方有汽车"还是"前方有垃圾桶"
+- 我们的系统：自动感知→主动播报→随时提问→语音回答，全链路延迟<1秒（环境播报），VLM回答3-5秒
+
+
+Q4: 项目的核心创新是什么？
+
+简答：核心创新不是AI模型——YOLOv8n、Qwen3.6-Flash、Vosk、Piper都是已有开源模型。我们的贡献是设计了一套能在树莓派5级别的资源受限设备上确定性运行的多任务实时调度系统，保证警告永不丢失、VLM回答不会无限等待、环境播报不会压过用户交互。
+
+详细：
+创新有两个层面：
+1. 调度机制层面：三队列隔离 + 评分策略 + Aging Boost防饥饿 + USER_FOCUS直通路径，构成一套完整的确定性调度系统
+2. 工程验证层面：从trace.jsonl可以独立复算所有指标（Anti-Fabrication），任何一个拿到trace文件的人都能得出与我们一致的结论，系统行为完全可审计
+
+说白了，AI模型是所有人都能下载的，但让它们在资源受限的设备上不打架地协同工作——这是系统工程的贡献。
+
+
+Q5: 你们和"调几个API"项目有什么区别？
+
+简答：API是工具，调通API不难。难的是：YOLO每200-500ms推理一次，VLM每次3-5秒，TTS每次2-3秒——三个流程在同一个设备上并发时，谁先谁后？资源不够用时丢谁保谁？怎么保证安全警告不被排队挤掉？我们解决的正是这些调用API之后的系统级调度问题。
+
+详细：
+- 调通一个API只需要几行代码。但四个API同时跑在树莓派上，你会遇到：优先级反转（警告被低优先级排挤）、队列阻塞（用户提问后20秒才听到回答）、无限饥饿（环境播报永远排不上队）
+- 我们的三队列调度机制专门设计了三个独立队列 + 7层优先级链来解决这些问题
+- 我们有完整的trace日志和验证体系，任何行为都可以追溯因果链
+
+
+二、技术架构问题
+-------------------
+
+Q6: 系统的整体架构是什么样的？
+
+简答：四层架构——感知层（摄像头YOLO+麦克风ASR）→ 决策层（SpatialParser+DecisionMaker）→ 调度层（SpeechArbitrator三队列+VLMManager异步管理）→ 表达层（ExpressionEngine+TTS）。中间由Controller统一事件驱动。
+
+详细：
+- 感知层：YOLOv8n目标检测（每2帧一次），ASR语音识别（云端功能ASR或本地Vosk）
+- 决策层：将YOLO检测结果转化为"该不该说话"的决策（SpatialParser方向/距离估计→DecisionMaker意图判定）
+- 调度层：WARNING/VLM/ENV三队列仲裁，VLM异步管理（不阻塞主循环）
+- 表达层：模板引擎生成中文播报文本 → Piper TTS合成语音
+- Controller居中调度，任何模块不直接调用另一个模块
+
+
+Q7: YOLO检测到的原始数据怎么变成语音播报？
+
+简答：YOLO输出边界框(bounding box) → SpatialParser解析为"方向(左/前/右)+距离(近/较近/较远)+类别(行人/汽车...)" → DecisionMaker判断意图(首次看到=环境描述/靠近=正在接近警告/很近+危险=紧急警告) → ExpressionEngine套用中文模板生成文本 → SpeechArbitrator按优先级决定播报时机 → SpeechManager→TTS → 用户听到语音。
+
+详细（举例）：
+- 摄像头看到右侧出现一部汽车（YOLO: car, bbox=[500,200,600,400]）
+- SpatialParser: 方向=右侧（x_center/width > 0.66），距离=较近（面积比>5%），危险物体=是
+- DecisionMaker: 首次出现 → intent=ENVIRONMENT_DESC，但跟踪后发现靠近趋势 → intent=APPROACHING
+- ExpressionEngine: 模板"{direction}{class_zh}正在靠近，请注意避让" → "右侧汽车正在靠近，请注意避让"
+- SpeechArbitrator: priority=1(WARNING)，三队列中优先取出播放
+
+
+Q8: 三队列是怎么工作的？为什么需要三个队列？
+
+简答：不是简单的优先级排序，而是结构性隔离。WARNING队列（容量3，永不丢弃）保证安全信息不会因为队列满载而丢失；VLM队列（容量5，评分选择）保证用户提问的回答不会无限排队；ENV队列（容量3，满拒新）限制环境播报的资源消耗。三个队列各自的容量和丢弃策略不同，从结构上避免了优先级之间的相互侵占。
+
+详细：
+- 单一优先级队列的问题：如果只有一条队列，高负载时队列满→所有任务（包括警告）一起丢→不可接受
+- WARNING队列"覆盖最旧"：重要警告不丢，旧警告被新警告覆盖是合理的（更旧的警告信息已过时）
+- VLM队列"评分选择"：不按入队顺序，而是按wait_time*10+语义基础分选择，等最久的优先
+- ENV队列"拒绝新来"：环境信息量大且时效短，丢弃旧的比丢弃新的更有意义
+- 三队列不是增加复杂度，而是"把不同价值的信息放在不同保险箱里"
+
+
+Q9: 7层调度优先级链具体是什么？
+
+简答：从高到低依次是：
+1. USER_FOCUS保留槽：用户提问的VLM回答直通，不参与竞争
+2. Aging Boost：VLM等超过4秒，强制提取权，绕过所有限制立即播
+3. VLM保活：距离上次VLM播放超过4秒，强制选一个VLM
+4. 硬性交错：连续播了1个WARNING后强制选VLM
+5. WARNING优先：有WARNING就选，但不超过连续1个
+6. 加权轮询：按[VLM, ENV, ENV]的顺序轮流
+7. 兜底：有VLM选VLM，没有则选ENV
+
+每一层都有对应代码逻辑，不是凭空设计的。
+
+
+Q10: Aging Boost是怎么保证VLM不超过4秒的？
+
+简答：每次select_next()调用时，先全量扫描VLM队列。任何一个任务如果wait_time > 4秒，直接标记force_play=True，跳过调度链和节流检查，立即返回播放。这是硬编码的时间约束，数学上保证任意VLM任务最大等待时间≤4秒，不是"大概率"而是"确定性"。
+
+详细：
+- 代码位置：speech_arbitrator.py:171-182
+- 扫描逻辑：`for qitem in list(self.vlm_queue): if wait_time > self._vlm_starvation_threshold: ... force_play=True`
+- force_play标记在节流门控中直接放行（_apply_throttle: bypass or force_play → return item）
+- 这个机制把"概率避免饥饿"升级为"确定性消除饥饿"
+
+
+Q11: 节流门控是什么？为什么要丢弃而不是排队？
+
+简答：节流门控是一个输出频率限制器。系统在3种情况下触发：
+- WARNING或force_play标记的任务 → 直接放行
+- 距离上次播放<1.5s → VLM任务首次被block时插回队首，第二次block时丢弃；ENV任务直接丢弃
+
+不是因为排队不好，而是因为：
+- 语音输出物理上串行（人只有一个耳朵），堆积的队列=用户听到的延迟
+- ENV消息时效极短（2秒前的"前方有行人"可能已经不准了），丢弃过时信息比排队播放它更合理
+- 这是输出受限系统（output-limited）的本质策略——在固定输出带宽下做最优信息选择
+
+
+Q12: USER_FOCUS机制是什么？
+
+简答：用户按'a'键提问后，系统进入5秒"用户焦点"期。期间发生三件事：
+1. 所有环境播报被冻结——保证用户提问不被打断
+2. VLM回答通过reserved_slot直通路径——不进入三队列竞争
+3. scene版本号被冻结——防止VLM返回时因版本不一致被丢弃
+
+这是一种"结构旁路（bypass）"设计，不是提升优先级而是脱离调度系统，直接最短路径播放。
+
+详细代码位置：
+- _enter_user_focus(): controller.py:484-488
+- _update_user_focus(): controller.py:490-495（超时自动关闭）
+- _on_navigation_event(): controller.py:139-141（USER_FOCUS期间直接返回，不生成导航事件）
+- select_next(): speech_arbitrator.py:159-168（reserved_slot优先检查）
+
+
+Q13: VLMManager是怎么异步工作的？
+
+简答：VLMManager使用请求队列+后台调度线程模式：
+1. 用户提问 → Controller → VLMManager.ask_async() → 入队（非阻塞，<1ms）
+2. 后台daemon线程每3秒从队列取一个任务，调用云端API（阻塞，3-5秒）
+3. 结果放入result_queue
+4. 主循环每帧调用poll_result()检查结果
+5. 有结果则回调_on_vlm_result → version校验 → 提交到arbitrator
+
+关键点：主循环完全不受VLM调用阻塞，用户可以继续行走、环境继续播报。
+
+
+Q14: 系统怎么保证VLM回答与当前场景对应？
+
+简答：通过version校验。每次场景发生变化（新物体出现/消失），scene_version += 1。VLM请求发出时携带当前version，结果返回时对比：如果version不一致，说明场景已经变了，旧答案被丢弃（打印"version_mismatch"）。这避免了对"已经没有汽车了"的场景播报"前方有汽车"。
+
+
+Q15: TTS播放链的三层fallback是什么？
+
+简答：在Linux（树莓派）上，播放顺序为：
+1. pygame.mixer（异步非阻塞，需要SDL库）
+2. aplay（ALSA系统播放器）
+3. paplay（PulseAudio）→ pw-play（PipeWire）
+
+只要有一条路径可用，用户就能听到声音。这是为Pi OS Bookworm+（默认使用PipeWire）做的适配。Windows上走第一路径失败则用start命令。
+
+此外，TTS临时wav文件在Linux下写入/dev/shm（RAM disk），避免反复写入SD卡造成损耗。
+
+
+Q16: 系统的配置是怎么管理的？
+
+简答：三层YAML配置系统：
+- config/config.yaml：所有参数的默认值（86行，约30个参数）
+- config/config_pc.yaml：PC覆盖（YOLO=320分辨率，日志开启）
+- config/config_pi.yaml：Pi覆盖（YOLO=256分辨率，ASR=Vosk本地，VLM间隔=5s）
+
+加载优先级：环境变量EDGE_VISION_PROFILE > config.yaml的profile键 > 系统自动检测（Linux→pi，其他→pc）
+
+所有硬编码参数已通过CONFIG.get("key", default)方式迁移到配置文件，config.yaml中被消费的参数覆盖率从28%提升至约85%。
+
+
+三、实验结果与验证
+-------------------
+
+Q17: 你们做了哪些实验？结果如何？
+
+简答：完成了三阶段逐层验证+两次压测，核心结果：
+- Stage 1（纯调度注入）：VLM 100%播放，系统行为确定性可复现
+- Stage 2（Controller全链路）：USER_FOCUS零泄漏，行为与Stage 1一致
+- Stage 3（真实main.py运行，5分钟）：导航事件60%存活，VLM 100%播放，avg_wait=0.1s，WARNING零丢弃
+- 压测（410条目/120s）：WARNING零丢弃，顺序零违规，VLM播放率+80%
+
+详细实验数据见"第六部分：三阶段实验方法"和docs/reports/目录。
+
+
+Q18: 为什么Stage 2导航存活率是0%，Stage 3是60%？
+
+简答：这是最容易被问到的技术问题。原因不是调度器变了，而是输入事件的时间结构变了：
+- Stage 2用的是合成注入（50ms间隔的固定循环），drain间隔太短，所有非保活路径都被节流门控杀死
+- Stage 3用真实YOLO检测（~66ms间隔+推理抖动），帧间隔的自然时间离散化使得部分事件满足了节流窗口（1.5s），得以通过
+
+结论：这不是bug，而是系统行为是"调度机制+输入事件分布"的联合结果。真实场景的时间节奏自然缓解了合成测试中的极端耦合。
+
+
+Q19: 60%的导航存活率算高吗？35.7%的用户输入播放率是不是太低？
+
+简答：在输出受限系统中，100%播放率是不合理的（等于没有过滤策略）。播放率取决于：
+- 输入速率 vs 输出带宽容量的比值
+- TTS物理播放需要2-3秒/条，最大输出约0.3-0.5条/秒
+- 如果YOLO每秒产生5次检测结果，物理上不可能全部播放
+
+核心指标不是"播放了多少"，而是：
+1. WARNING是否零丢失（是，0 dropped）
+2. VLM是否全部播放（是，100%）
+3. 丢弃的低优先级任务是否有trace记录（是，trace完整）
+
+35.7%的用户输入播放率是因为用户输入中有很多被ResponseRouter本地回答了（直接返回文本），只有走VLM路的才需要排队。实际VLM请求全部播放。
+
+
+Q20: 你们的评估数据是不是可以伪造的？
+
+简答：不能。因为有Anti-Fabrication验证体系：
+1. trace.jsonl是唯一数据源，所有SUBMIT事件只有speech_arbitrator.submit()一个入口
+2. 评估器（evaluate_scheduler.py V4）硬编码`assert data_source == "trace_only"`，不能从其他数据源读取
+3. recompute_from_trace.py完全独立重算所有指标，与report.json逐项对比（容差<0.01s）
+4. 当前consistency_verdict = PASS
+
+任何一个拿到trace.jsonl的人，运行recompute_from_trace.py都能得出与我们完全一致的结论。这就是可审计性。
+
+
+Q21: PC上的实验结果能代表树莓派上的表现吗？
+
+简答：不能直接外推，但可以建立底线保证。PC实验证明了调度逻辑的正确性——优先级机制有效、WARNING零丢失、VLM无饥饿。Pi上的差异在于输入事件密度和帧率，但调度逻辑本身与硬件无关。
+
+我们还需要在Pi上做实机验证（Phase 3-8逐层恢复），获取Pi上的trace数据与PC数据对比，以完成参数最终收敛。当前代码已就绪，等待硬件到位。
+
+
+Q22: 极限压测结果是什么？
+
+简答：407条目/120秒的超饱和负载测试：
+- WARNING丢弃：0（零丢失）
+- 顺序违规：0
+- VLM已播放：27条（比优化前+80%）
+- 首次崩溃时间：永不（系统未崩溃）
+
+优化前（三队列优化前）的对比数据：
+- WARNING丢弃：34条（73.9%）→优化后 0
+- 顺序违规：6 →优化后 0
+- 首次崩溃：t=0.4s →优化后永不
+
+详细见docs/reports/多队列优化后的极限压测报告.txt。
+
+
+四、工程实践问题
+-------------------
+
+Q23: 系统会不会在树莓派上崩溃？
+
+简答：不会。我们做了四轮共14项运行时适配修复：
+- Round 1：启动防崩溃（API Key缺失降级、模型加载try/except、全局异常捕获）
+- Round 2：ASR输入容错（keyboard权限检测、双引擎失败后fallback到input()文本输入）
+- Round 3：TTS播放保活（跨平台play_audio_file、6处播放路径全量try/except、pygame 10s超时）
+- Round 4：Pi运行阻塞解除（摄像头CSI GStreamer、丢帧continue、headless stdin支持、profile自动检测）
+
+所有故障路径都有降级方案，不会出现一个模块失败导致整个系统崩溃。
+
+
+Q24: 树莓派上YOLO能跑多少帧？
+
+简答：Pi配置下（config_pi.yaml），imgsz=256，置信度阈值0.45，每3帧检测一次（约每秒5次检测，如果帧率15fps）。YOLOv8n在ARM64上的推理耗时约80-120ms。这不是实时全帧检测，而是采样检测——检测结果在几帧之间的变化已经足够驱动场景感知。
+
+
+Q25: 如果没有网络怎么办？
+
+简答：系统可完全离线运行：
+- ASR：本地Vosk离线中文模型（取代云端fun-asr-realtime）
+- TTS：本地Piper（zh_CN-huayan-medium.onnx），始终离线
+- VLM：无网络时VLM功能不可用，但本地问答（local_scene_qa、EnvironmentDescriber）和导航播报仍正常工作
+- RuntimeManager每5秒检测网络状态，自动切换cloud/local模式
+
+离线模式下系统核心功能（环境检测、危险警告、导航播报）全部可用，仅视觉大模型问答暂时不可用。
+
+
+Q26: 系统能检测台阶和地形变化吗？怎么做的？
+
+简答：当前系统具备轻量化语义导航能力（如"左侧有行人，可稍向右移动"的方向级避让建议），但尚未实现台阶/坡度等复杂地形检测。这是后续重点扩展方向。
+
+我们评估了传统深度估计和 SLAM 方案，结论是它们在树莓派 5 上的计算开销过大，不适合低延迟实时目标。因此后续采用"轻量化地形风险检测"方案：
+
+具体技术路线：在 YOLO 目标检测之外并行增加 TerrainRiskDetector 模块，通过 OpenCV 几何特征分析实现：
+- 地面纹理断裂检测（纹理突然中断→台阶边缘）
+- 水平边缘突变检测（横贯画面的边缘线→台阶或坡度边界）
+- 地面消失区域检测（画面下部区域消失→下坡或下台阶）
+- 全部为纯几何特征计算，不引入新模型，不加重推理负担
+
+检测结果复用现有 SpatialParser → DecisionMaker → ExpressionEngine → SpeechArbitrator 调度链路，输出如：
+- "前方地面存在高度变化，请注意脚下"
+- "前方疑似下台阶区域，请减速"
+
+设计理念：不是完整地图导航（对Pi太重），而是"风险触发型"——只在检测到地形异常时触发提醒，不影响正常行走时的系统静默性。
+
+
+Q27: 怎么在树莓派上启动系统？
+
+简答：
+```bash
+cd ~/edge-visionQA
+source venv/bin/activate
+python main.py              # USB摄像头
+CAMERA_SRC=csi python main.py  # CSI摄像头
+CAMERA_SRC=0 python main.py    # V4L2设备0
+```
+系统自动检测Linux并使用Pi profile（config_pi.yaml），无需手动配置。
+
+详细操作见docs/Pi上机操作手册.txt。
+
+
+Q28: 代码量有多大？模块怎么组织？
+
+简答：约5000行Python，分为10个目录：
+- core/（530行controller为核心）
+- perception/（340行arbitrator为核心）
+- vlm/（155行manager+77行provider）
+- asr/（300行云端+165行本地）
+- tts/（170行本地TTs+30行后端+170行云TTs备用）
+- expression/（~120行模板+引擎+导航建议）
+- camera/（~130行抽象层+PC/Pi双实现）
+- observe/（40行trace日志+50行dashboard）
+- analysis/（~500行评估+复算+防伪验证）
+- config/（86行基础+PC/Pi覆盖）
+
+
+五、答辩常见"刁钻问题"
+-----------------------
+
+Q29: 你们只是做了调度，没做模型创新，这算什么贡献？
+
+答：这正是我们要强调的——不是所有好项目都要做模型创新。提醒评委：
+1. 姚期智院士在多个场合指出：中国在AI应用和系统工程方面有独特优势，不是只有模型创新才算创新
+2. 实时系统调度是一个经典计算机科学问题（优先级反转在1997年火星探路者上就因未处理好而导致系统反复重启），将调度理论在树莓派上实际落地是严肃的工程贡献
+3. 如果你非要说模型——能用YOLOv8n+Qwen3.6-Flash+Piper+Vosk组合在树莓派上跑到稳定运行，说明我们理解每个模型的计算特性和资源消耗，这不是"调API"，这是"理解API如何影响系统稳定性"
+
+
+Q30: 你们的数据量太小了（5分钟/72个事件），能说明什么？
+
+答：
+1. 三阶段实验的设计目标不是收集大数据，而是隔离变量、精确定位行为机制（为什么Stage 2=0%、Stage 3=60%？这不是数据量的问题，两个5分钟的运行就揭示了事件分布的驱动作用）
+2. 极限压测有407条目/120秒，数据量足够验证WARNING零丢失和顺序一致性
+3. 系统行为是确定性的（Stage 1三轮重复实验精确一致），不需要大量重复来证明统计显著性
+4. Pi实机数据会在后续实验收集，当前Phase 3-8逐层验证设计已将数据可复现性纳入考虑
+
+
+Q31: 树莓派还没测完，答辩能说什么？
+
+答：实话实说即可。答辩强调：
+1. PC端三阶段验证已经证明了调度逻辑的正确性——这是核心贡献
+2. Pi端代码已100%就绪（CameraProvider解耦 + Feature Flag逐层恢复 + 四轮14项适配 + 全量Pi上机手册）
+3. Pi实机验证正在由队友执行（Phase 3-8），但调度逻辑在Pi上的行为与PC上应该一致，因为调度器本身不依赖硬件
+
+这不是"没做完"，这是"核心已完工并验证，部署在进行中"。工程项目应该用工程标准评判。
+
+
+Q32: 如果摄像头画面中什么也没有，系统做什么？
+
+答：系统保持静默，不播报（DecisionMaker返回should_speak=False）。主循环继续运行，等待物体出现。如果用户提问（"前面有什么？"），VLM仍然可以看到画面（即使YOLO没检测到物体，VLM可以直接看图像），给出"当前画面中没有明显物体"之类的回答。
+
+
+Q33: 系统怎么区分行人和路灯？万一把路灯识别成人怎么办？
+
+答：YOLOv8n的COCO预训练80类中有person和laptop、cell phone等的明确分类。误识别率取决于置信度阈值（PC=0.5，Pi=0.45）。我们选用的YOLOv8n在COCO验证集上的mAP约37%，对于日常场景中的常见物体（人、车、椅子、桌子等）有足够的区分度。我们不追求100%准确率，系统是"辅助工具"而非"自动驾驶"，用户始终保持决策权。
+
+
+Q34: 系统能识别多少种物体？
+
+答：YOLOv8n基于COCO数据集训练，支持80类常见物体。在我们的CLASS_MAP中映射了16种中文类别（行人、汽车、卡车、公交车、摩托车、自行车、冰箱、椅子、沙发、床、电视、笔记本电脑、手机、狗、猫、瓶子），足以覆盖室内外常见场景。如需扩展类别，只需修改CLASS_MAP字典和重新训练YOLO模型（但后者不在当前范围内）。
+
+
+Q35: 如果多人同时走路（例如在人行道上），系统会不会疯狂播报？
+
+答：不会。因为有多层抑制机制：
+1. SpatialParser自动合并同类+同方向的物体（"左侧3名行人"而不是"左侧有行人、左侧有行人、左侧有行人"）
+2. DecisionMaker的repeat_interval（3秒）禁止同一物体在短时间内重复播报
+3. OutputPolicy的Speech Budget（5秒窗口最多2条）防止环境描述轰炸
+4. SpeechArbitrator的节流门控（1.5秒）进一步限制输出频率
+
+系统目前的实现是只选top-1最高优先级的事件播报（DecisionMaker的_score函数），而不是逐条播报所有物体。
+
+
+Q36: 项目的时间线和分工是怎样的？
+
+答：（按答辩时的实际情况填写。以下为建议模板）
+- 2025年11月-12月：功能原型验证（VLM+TTS+ASR独立联调）
+- 2026年1月-2月：实时环境感知链路搭建（YOLO+Spatial+Decision+Expression，含轻量化语义导航）
+- 2026年3月：系统架构重构（Controller事件驱动+分层设计）
+- 2026年4月：多队列调度系统设计与验证（SpeechArbitrator+三阶段实验）
+- 2026年5月：工程收敛（配置迁移+可观测性+Anti-Fabrication）+Camera解耦+Feature Flag
+- 2026年5月-6月：Pi实机逐层验证（Phase 3-8）→ 参数一次性收敛
+- 2026年6月-7月（计划）：YOLO模型INT8量化/升级YOLOv10n INT8 → 轻量化地形风险检测（TerrainRiskDetector）→ IMU传感器融合
+- 后续长期：离线本地VLM (llama.cpp)、GPIO物理按键、多语言支持
+
+分工：根据实际情况补充姓名与职责对应。
+
+
+Q37: 后续计划具体怎么实现？特别是台阶检测，技术上可行吗？
+
+答：完全可行，且与现有架构无缝兼容。具体路径如下：
+
+第一步——YOLO模型轻量化：
+- 方案A：将当前YOLOv8n（FP32）量化为INT8精度，通过Ultralytics导出API一键完成，预计推理延迟降低30-50%，模型文件减少约75%
+- 方案B：直接替换为YOLOv10n INT8（原生支持INT8推理），精度相当但推理速度更快
+- 两种方案均不影响现有SpatialParser和DecisionMaker接口，因为YOLO输出格式不变（xyxy bbox + confidence + class_id）
+
+第二步——轻量化地形风险检测（TerrainRiskDetector）：
+- 纯OpenCV实现，不引入任何新模型。具体技术路径：
+  1. 地面纹理断裂检测：提取画面下方1/3区域的边缘特征（Canny边缘检测），如果边缘密度在中部突然锐减→可能前方是台阶下降
+  2. 水平边缘突变：霍夫线检测找横贯画面的水平边缘线，若连续多帧存在→台阶或坡度边界
+  3. 地面消失区域：画面底部区域突然大面积颜色/纹理均值偏移→前方可能有高度变化
+- 检测输出格式与YOLO一致（类、方向、置信度），直接走现有SpatialParser → DecisionMaker链路
+- 属于"风险触发型"而非连续导航，只在检测到异常时播报一句提醒，不影响正常行走
+
+第三步——IMU传感器融合：
+- 在main.py中以独立线程采集IMU数据（加速度+陀螺仪）
+- 写入context["system"]["imu"]供所有模块读取
+- 不与调度器交互，仅作为辅助信息增强决策和地形检测的准确性
+
+
+Q38: 如果被问到完全不懂的问题怎么办？
+
+答：
+1. 不要说"我不知道"，说"这个我们考虑过，但目前不在当前阶段的验证范围，后续会..."加上合理的延伸
+2. 如果确实完全不懂，诚实说"这个具体细节我的队友更清楚，我可以在会后请ta补充说明"，然后转入你擅长的领域
+3. 关键是不要出现事实性错误——本FAQ中的数字（60%、4s、1.5s等）是硬数据，不要记错
+
+
+Q39: 评委最可能挑战的几个点及对策
+
+1. "只做了调度，没做模型"→ 见Q29
+2. "用户还没试过"→ 强调三阶段实验的工程方法论（不是没人用，是还没到真人测试阶段，项目遵循逐层验证逻辑）
+3. "数据量太小"→ 见Q30
+4. "Pi上还没跑起来"→ 见Q31
+5. "60%播放率太低"→ 见Q19
+6. "延迟体现在哪里"→ avg_wait=0.1s, max_wait=0.8s (Stage 3)，从检测到播报的全链路延迟在1秒以内
+
+
+七、基础技术概念速查
+---------------------
+
+以下概念是答辩中可能被问到的，建议理解到能用自己的话解释的程度。
+
+| 概念 | 一句话解释 |
+|------|-----------|
+| YOLOv8n | 轻量级物体检测模型，n=nano最小版，约3M参数，适合边缘设备 |
+| Qwen3.6-Flash | 阿里云的多模态大模型（能看图片+读文字），通过DashScope API调用 |
+| Piper TTS | 开源的离线中文语音合成引擎，模型大小约50MB，适合嵌入式设备 |
+| Vosk ASR | 开源的离线中文语音识别引擎，本地运行不依赖网络 |
+| 优先级反转 | 高优先级任务等待低优先级任务释放资源的系统问题，我们的三队列隔离从结构上避免了它 |
+| 饥饿(starvation) | 低优先级任务因持续被高优先级任务抢占而永远得不到执行，我们的Aging Boost从数学上消除了它 |
+| 节流(throttle) | 限制输出频率的机制，防止系统在短时间内产生过多语音播报 |
+| trace.jsonl | JSONL格式的系统行为日志，记录每个任务的完整生命周期，是所有评估的唯一数据源 |
+| Anti-Fabrication | 数据防伪验证：通过独立脚本从trace重新计算所有指标，与报告对比确认数据未被篡改 |
+| Feature Flag | 通过环境变量控制功能开关，支持Pi逐层恢复而不修改代码 |

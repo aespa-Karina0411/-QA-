@@ -47,3 +47,7 @@ temp/
 
 # Stage experiment scripts
 scripts/
+
+# OpenCode tooling
+.opencode/
+.skills/
