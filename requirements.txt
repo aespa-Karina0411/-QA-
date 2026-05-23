@@ -13,3 +13,5 @@ piper-tts
 vosk
 PyYAML
 picamera2
+onnxruntime>=1.26.0
+onnx

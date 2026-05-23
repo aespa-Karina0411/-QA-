@@ -1,6 +1,9 @@
 # 树莓派部署环境 — 仅覆盖差异字段
 
 yolo:
+  backend: "onnx"              # 树莓派: 强制 ONNX
+  model: "yolov8n"
+  onnx_path: "yolov8n_int8.onnx"
   conf_threshold: 0.45         # 树莓派: 略降低阈值
   imgsz: 256                   # 树莓派: 降分辨率
   detect_interval: 3            # 树莓派: 增大检测间隔

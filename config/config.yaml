@@ -42,6 +42,9 @@ cold_start:
   duration: 5.0              # 冷启动窗口 (s), 需覆盖启动消息播放 (~2.5s) + YOLO 预热
 
 yolo:
+  backend: "auto"              # "onnx" | "pt" | "auto"
+  model: "yolov8n"             # 模型名称（不含后缀）
+  onnx_path: "yolov8n_int8.onnx"
   conf_threshold: 0.5
   imgsz: 320
   detect_interval: 2          # 每 N 帧检测一次

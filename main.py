@@ -109,9 +109,13 @@ def run():
 
     if ENABLE_YOLO:
         try:
-            yolo_utils.load_yolo_model("yolov8n.pt")
+            yolo_backend = CONFIG.get("yolo.backend", "auto")
+            yolo_model_name = CONFIG.get("yolo.model", "yolov8n")
+            yolo_onnx_path = CONFIG.get("yolo.onnx_path", None)
+            yolo_utils.load_yolo_model(yolo_model_name, yolo_backend, yolo_onnx_path)
         except Exception as e:
-            print("[WARN] YOLO model load failed:", e)
+            print("[FATAL] YOLO model load failed:", e)
+            raise
 
     if ENABLE_TTS:
         try:

@@ -6,21 +6,14 @@ __pycache__/
 dist/
 build/
 
-# Environment
-.env
-venv/
-.venv/
-
 # IDE
 .vscode/
 .idea/
-.cursor/
 
 # Generated data
 logs/*.jsonl
 logs/*.json
 logs/*.csv
-run_log.json
 analysis/*.jsonl
 analysis/*.txt
 analysis/report.json
@@ -28,25 +21,20 @@ analysis/full_run_report.json
 analysis/history/
 
 # Private documents
-MID_REPORT_DRAFT.txt
-大创日志.md
 *.docx
 
 # Model files (too large for git)
 *.pt
 *.onnx
-models/piper/
-models/vosk/
+
+# Allow small model files for quick start
+!yolov8n_int8.onnx
+!yolov8n.pt
+!models/piper/*.onnx
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Temp
-temp/
-
-# Stage experiment scripts
-scripts/
 
 # OpenCode tooling
 .opencode/

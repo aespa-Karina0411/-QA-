@@ -2,7 +2,7 @@
   <h1 align="center">edge-visionQA</h1>
   <p align="center">面向视障人士的 AI 驱动边缘视觉语音问答系统</p>
   <p align="center">
-    <strong>YOLOv8n · Qwen3.6-Flash · Piper · Vosk · 多队列仲裁</strong>
+    <strong>YOLOv8n (ONNX INT8) · Qwen3.6-Flash · Piper · Vosk · 多队列仲裁</strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python">
@@ -159,6 +159,31 @@ EDGE_VISION_PROFILE=pi      # 强制 Pi profile
 EDGE_VISION_DASHBOARD=1     # 终端实时调度面板 + 画面 HUD 叠加
 ```
 
+### YOLO 推理后端
+
+系统支持 PT / ONNX INT8 双后端切换，通过配置控制，无需改代码：
+
+| backend | 模型 | 大小 | 适用 |
+|---------|------|------|------|
+| `onnx` | `yolov8n_int8.onnx` | 3.2MB | 树莓派/边缘端（推荐） |
+| `pt` | `yolov8n.pt` | 6.2MB | PC 开发/Fallback |
+| `auto` | 优先 ONNX，回退 PT | — | 默认 |
+
+配置方式：
+
+```yaml
+# config/config.yaml 或 config/config_pi.yaml
+yolo:
+  backend: "auto"              # "onnx" | "pt" | "auto"
+  model: "yolov8n"
+  onnx_path: "yolov8n_int8.onnx"
+  conf_threshold: 0.5
+  imgsz: 320
+  detect_interval: 2
+```
+
+模型文件已纳入 Git 版本管理，`git clone` 后直接可用，无需额外导出或转换。
+
 ---
 
 ## Pi5 部署状态
@@ -220,7 +245,7 @@ edge-visionQA/
 │   ├── decision_utils.py     # 5 层决策引擎
 │   ├── output_policy.py      # 输出策略层
 │   ├── spatial_utils.py      # 语义映射 + 迟滞平滑
-│   └── yolo_utils.py         # YOLO 检测
+│   └── yolo_utils.py         # YOLO 检测（PT / ONNX INT8 双后端）
 ├── vlm/                     # VLM 异步管理
 ├── asr/                     # 语音输入（云端 DashScope + 本地 Vosk）
 ├── tts/                     # 语音输出（云端 cosyvoice + 本地 Piper）
